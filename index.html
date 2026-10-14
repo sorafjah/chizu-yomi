@@ -59,6 +59,15 @@ button{font-family:inherit;color:inherit}
 .genres .ck{flex:none;width:30px;height:30px;border-radius:7px;border:3px solid var(--line,#9AAFB5);background:#fff;position:relative}
 .genres .segbtn[aria-pressed="true"] .ck{background:var(--accent);border-color:var(--accent)}
 .genres .segbtn[aria-pressed="true"] .ck::after{content:"";position:absolute;left:8px;top:2px;width:8px;height:15px;border:solid #fff;border-width:0 4px 4px 0;transform:rotate(45deg)}
+.lvrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.lvrow .segbtn{min-width:56px;font-size:20px}
+.cfgpanel{margin-top:12px;padding:12px 14px;border:2px solid var(--line);border-radius:12px;background:var(--bg);display:grid;gap:12px}
+.cfgrow{display:flex;align-items:center;gap:6px 10px;flex-wrap:wrap}
+.cfgrow .flabel{margin:0;flex:0 0 8.4em}
+.cfgrow .nbtn{width:46px;height:46px}
+.cfgrow .num input{width:62px;height:46px;font-size:22px}
+.cfgrow .num .unit{font-size:17px}
+.cfgrow .segbtn{min-height:48px;font-size:16px;padding:4px 12px}
 .hintnote{margin:10px 0 0;font-size:16px;font-weight:700;color:#2E7D52}
 .levels .lv{flex:none;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:var(--bg);font-size:20px}
 .levels .segbtn[aria-pressed="true"] .lv{background:var(--accent);color:#fff}
@@ -130,7 +139,7 @@ textarea.copybuf{position:fixed;left:-9999px;top:0;-webkit-user-select:text;user
 </style>
 <style id="shareCss">
 /* map + printable sheet (also copied into the downloaded print file) */
-.map{position:relative;width:100%;aspect-ratio:1000/680;container-type:inline-size;background:#fff;border:2px solid #333;box-sizing:border-box;overflow:hidden;font-family:'BIZ UDPGothic','BIZ UDPゴシック','Hiragino Sans','Noto Sans JP','Noto Sans CJK JP',sans-serif;color:#111}
+.map{position:relative;width:100%;aspect-ratio:1000/770;container-type:inline-size;background:#fff;border:2px solid #333;box-sizing:border-box;overflow:hidden;font-family:'BIZ UDPGothic','BIZ UDPゴシック','Hiragino Sans','Noto Sans JP','Noto Sans CJK JP',sans-serif;color:#111}
 .map svg.msvg{position:absolute;inset:0;width:100%;height:100%;display:block}
 .map svg text{font-family:inherit}
 .map rt{font-size:.5em;font-weight:400}
@@ -147,7 +156,8 @@ textarea.copybuf{position:fixed;left:-9999px;top:0;-webkit-user-select:text;user
 .maphead .lg{display:flex;flex-wrap:wrap;gap:4px 14px;flex:1;min-width:0}
 .maphead .lgi{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
 .maphead .lgi svg{flex:none}
-.maphead .cmp{display:inline-flex;align-items:center;gap:2px;font-weight:700}
+.maphead .cmp{display:inline-flex;flex-direction:column;align-items:center;gap:0;font-weight:700;line-height:1}
+.maphead .cmpk{font-size:15px;line-height:1.1}
 .sheet-in{font-family:'BIZ UDPGothic','BIZ UDPゴシック','Hiragino Sans','Noto Sans JP',sans-serif;font-size:12pt;line-height:1.75;color:#000}
 .sheet-in rt{font-size:.5em}
 .ps-name{display:flex;justify-content:flex-end;font-size:13pt;margin-bottom:1mm}
@@ -192,18 +202,15 @@ textarea.copybuf{position:fixed;left:-9999px;top:0;-webkit-user-select:text;user
     <div class="card setcard">
       <h2 data-r="設定"></h2>
       <div class="field">
-        <div class="flabel" data-r="地図の種類"></div>
-        <div class="seg" id="segType"></div>
-      </div>
-      <div class="field">
         <div class="flabel" data-r="ジャンル"></div>
         <div class="levels genres" id="segGenre"></div>
         <p class="hint" data-r="いくつでも えらべるよ。えらんだジャンルの問題が、上から じゅんに 出るよ。"></p>
       </div>
       <div class="field">
         <div class="flabel" data-r="レベル"></div>
-        <div class="levels" id="segLevel"></div>
-        <p class="hint" data-r="レベルで、答えの数や 建物の数、ヒントが かわるよ。"></p>
+        <div class="lvrow"><div class="seg" id="segLevel"></div><button id="btnCfg" class="btn sm" type="button" aria-expanded="false" data-r="設定"></button></div>
+        <p class="hint" id="lvNote" hidden data-r="じぶんで 設定したよ。"></p>
+        <div class="cfgpanel" id="cfgPanel" hidden></div>
       </div>
       <div class="field row" id="cntRow">
         <div class="flabel" data-r="問題の数"></div>
@@ -285,7 +292,7 @@ textarea.copybuf{position:fixed;left:-9999px;top:0;-webkit-user-select:text;user
 /* =========================================================
    ふりがな
    ========================================================= */
-const RUBY_SRC=`設定:せってい 入:はい 点線:てんせん 本番:ほんばん 同:おな 少:すく 多:おお 路面電車:ろめんでんしゃ 電車:でんしゃ 鉄道:てつどう 郵便局:ゆうびんきょく 小学校:しょうがっこう 中学校:ちゅうがっこう 公園:こうえん 病院:びょういん 図書館:としょかん 銀行:ぎんこう 警察署:けいさつしょ 消防署:しょうぼうしょ 市役所:しやくしょ 美術館:びじゅつかん 体育館:たいいくかん 公民館:こうみんかん 幼稚園:ようちえん 交番:こうばん 薬局:やっきょく 停:てい 駅:えき 前:まえ 丁目:ちょうめ 地図:ちず 方位:ほうい 進行方向:しんこうほうこう 方向:ほうこう 北東:ほくとう 北西:ほくせい 南東:なんとう 南西:なんせい 北:きた 南:みなみ 東:ひがし 西:にし 右側:みぎがわ 左側:ひだりがわ 右:みぎ 左:ひだり 側:がわ 見:み 近:ちか 家:いえ 歩:ある 曲:ま 交差点:こうさてん 着:つ 道順:みちじゅん 道:みち 出:で 向:む 乗:の 上り:のぼ 下り:くだ 上:うえ 下:した 何分:なんぷん 何回:なんかい 何:なん 時間:じかん 待:ま 早:はや 答:こた 正:ただ 文:ぶん 読:よ 取:と 数字:すうじ 数:かず 中:なか 先生用:せんせいよう 先生:せんせい 先:さき 目:め 場所:ばしょ 所:しょ 問題:もんだい 名前:なまえ 回:かい 線:せん 次:つぎ 通:とお 進:すす 行:い 足:た 合:あ 印刷:いんさつ 種類:しゅるい 効果音:こうかおん 新:あたら 作:つく 練習:れんしゅう 番号:ばんごう 建物:たてもの 気:き 考:かんが 長:なが 画面:がめん 書:か 開:ひら 白黒:しろくろ 紙:かみ 動:うご 結果:けっか 重:かさ 矢印:やじるし 方:ほう 町:まち 文字:もじ 字:じ`;
+const RUBY_SRC=`設定:せってい 選択肢:せんたくし 本:ほん 走:はし 入:はい 点線:てんせん 本番:ほんばん 同:おな 少:すく 多:おお 路面電車:ろめんでんしゃ 電車:でんしゃ 鉄道:てつどう 郵便局:ゆうびんきょく 小学校:しょうがっこう 中学校:ちゅうがっこう 公園:こうえん 病院:びょういん 図書館:としょかん 銀行:ぎんこう 警察署:けいさつしょ 消防署:しょうぼうしょ 市役所:しやくしょ 美術館:びじゅつかん 体育館:たいいくかん 公民館:こうみんかん 幼稚園:ようちえん 交番:こうばん 薬局:やっきょく 停:てい 駅:えき 前:まえ 丁目:ちょうめ 地図:ちず 方位:ほうい 進行方向:しんこうほうこう 方向:ほうこう 北東:ほくとう 北西:ほくせい 南東:なんとう 南西:なんせい 北:きた 南:みなみ 東:ひがし 西:にし 右側:みぎがわ 左側:ひだりがわ 右:みぎ 左:ひだり 側:がわ 見:み 近:ちか 家:いえ 歩:ある 曲:ま 交差点:こうさてん 着:つ 道順:みちじゅん 道:みち 出:で 向:む 乗:の 上り:のぼ 下り:くだ 上:うえ 下:した 何分:なんぷん 何回:なんかい 何:なん 時間:じかん 待:ま 早:はや 答:こた 正:ただ 文:ぶん 読:よ 取:と 数字:すうじ 数:かず 中:なか 先生用:せんせいよう 先生:せんせい 先:さき 目:め 場所:ばしょ 所:しょ 問題:もんだい 名前:なまえ 回:かい 線:せん 次:つぎ 通:とお 進:すす 行:い 足:た 合:あ 印刷:いんさつ 種類:しゅるい 効果音:こうかおん 新:あたら 作:つく 練習:れんしゅう 番号:ばんごう 建物:たてもの 気:き 考:かんが 長:なが 画面:がめん 書:か 開:ひら 白黒:しろくろ 紙:かみ 動:うご 結果:けっか 重:かさ 矢印:やじるし 方:ほう 町:まち 文字:もじ 字:じ`;
 const RUBY=RUBY_SRC.trim().split(/\s+/).map(s=>{const [w,r]=s.split(':');const mm=w.match(/^([一-鿿々]+)(.*)$/);return {w,k:mm[1],rest:mm[2],r};}).sort((a,b)=>b.w.length-a.w.length);
 const MISSING=new Set();
 const isKanji=c=>/[一-鿿々]/.test(c);
@@ -319,7 +326,7 @@ const uniq=a=>[...new Set(a)];
 /* =========================================================
    地図の土台（格子の町）
    ========================================================= */
-const VW=1000,VH=680,RW=28,QO=30;
+const VW=1000,VH=770,RW=28,QO=30,GB=665,RY=724; // GB: 町の下はし RY: 鉄道
 const GX=[30,265,500,735,970],GY=[30,237,444,651];
 const NBX=4,NBY=3;
 const IP=(i,j)=>({x:GX[i],y:GY[j]});
@@ -331,7 +338,7 @@ const SINGLE=['中学校','図書館','警察署','消防署','市役所','美�
 const PREF=['あおば','ひかり','みどり','わかば','すみれ','かえで','つばき','さくら','もみじ','ひまわり','あさひ','なぎさ','こだま','はるか','つつじ','すずらん'];
 const DISTP=['あけぼの','たちばな','やよい','ことぶき','はなみ','ゆりの','しらかば','のぞみ','いずみ','ふじみ'];
 const STAP=['うみべ','やまて','かわせ','もりの','おかの','はやま','みなと','たかの','にれの','ほたる','しおかぜ','あおい'];
-const TYPES={bus:'バスの地図',route:'道順の地図',train:'電車の地図'};
+const TYPES={bus:'バスの地図',route:'道順の地図'};
 const LINE_STYLES=[
   {lab:'ア',dash:'16 9',w:4.5,cap:'butt',name:'はせん'},
   {lab:'イ',dash:'0.1 11',w:6.5,cap:'round',name:'てんせん'},
@@ -339,14 +346,22 @@ const LINE_STYLES=[
 ];
 
 /* ---- レベル（地図のこみ具合・答え方・ヒント） ---- */
-const LVP={
-  1:{nch:2,fac:6,multi:[2,2],lines:[1],tmax:1,ct:[1],bus:[[2,2],[3,1]],notch:false,train:'small',num:'choice',hint:'auto'},
-  2:{nch:3,fac:8,multi:[2,2],lines:[2],tmax:2,ct:[1,2],bus:[[2,2],[3,2],[2,3]],notch:false,train:'small',num:'choice',hint:'auto'},
-  3:{nch:4,fac:10,multi:[3,2,2],lines:[2],tmax:2,ct:[2],bus:[[3,2],[2,3],[3,3],[4,2]],notch:false,train:'normal',num:'mix',hint:'button'},
-  4:{nch:4,fac:12,multi:[3,3,2],lines:[2,3],tmax:3,ct:[2],bus:[[3,2],[3,3],[4,2],[2,3]],notch:true,train:'normal',num:'number',hint:'button'}
+const PRESETS={
+  1:{nch:2,fac:6,same:2,lines:1,tmax:1,num:'choice',hint:'auto'},
+  2:{nch:3,fac:8,same:2,lines:2,tmax:2,num:'choice',hint:'auto'},
+  3:{nch:4,fac:10,same:3,lines:2,tmax:2,num:'mix',hint:'button'},
+  4:{nch:4,fac:12,same:3,lines:3,tmax:3,num:'number',hint:'button'}
 };
-let LVc=LVP[2];
-function setLevel(l){LVc=LVP[l]||LVP[2];}
+const CFG_KEYS=['nch','fac','same','lines','tmax','num','hint'];
+function cfgLV(c){
+  const fac=c.fac,same=c.same;
+  const multi=same===3?(fac>=12?[3,3,2]:fac>=9?[3,2,2]:[3,2]):(fac>=10?[2,2,2]:[2,2]);
+  const bus=fac<=6?[[2,2],[3,1]]:fac<=8?[[2,2],[3,2],[2,3]]:fac<=10?[[3,2],[2,3],[3,3],[4,2]]:[[3,2],[3,3],[4,2],[2,3]];
+  const lines=Math.min(c.lines,c.tmax===1?2:3);
+  return {nch:c.nch,fac,multi,lines:[lines],tmax:c.tmax,ct:c.tmax===1?[1]:c.tmax===2?[1,2]:[2],bus,notch:fac>=12,num:c.num,hint:c.hint,time:!!c.time};
+}
+let LVc=cfgLV({...PRESETS[2],time:false});
+function setCfg(c){LVc=cfgLV(c);}
 function newMap(type){return {type,fac:[],slotFac:new Map(),occ:new Set(),blockTB:{},forbid:new Set(),home:null,stops:[],stations:[],routes:[],used:new Set()};}
 function slotValid(i,j,sx,sy){const bx=sx>0?i:i-1,by=sy>0?j:j-1;return i>=0&&i<5&&j>=0&&j<4&&bx>=0&&bx<NBX&&by>=0&&by<NBY;}
 function canPlace(m,i,j,sx,sy){
@@ -501,70 +516,16 @@ function routeDescription(m,r){
   return parts.join('');
 }
 
-/* ---------- 電車の地図 ---------- */
-function genTrain(){
-  const m=newMap('train');
-  const small=LVc.train==='small';const w=small?3:pick([3,4]),h=small?2:pick([2,3]);const bx0=ri(0,NBX-w),by0=ri(0,NBY-h);
-  const blocks=[];for(let x=bx0;x<bx0+w;x++)for(let y=by0;y<by0+h;y++)blocks.push([x,y]);
-  let cyc=boundaryCycle(blocks);if(signedArea(cyc)<0)cyc.reverse();
-  const L=cyc.length;
-  const isCorner=k=>{const p=cyc[(k-1+L)%L],c=cyc[k],n=cyc[(k+1)%L];return (c[0]-p[0])!==(n[0]-c[0])||(c[1]-p[1])!==(n[1]-c[1]);};
-  const corners=[];for(let k=0;k<L;k++)if(isCorner(k))corners.push(k);
-  const s=ri(0,3);const cA=corners[s],cB=corners[(s+1)%4];
-  const walk=(from,to)=>{const a=[];let k=from;for(;;){a.push(cyc[k]);if(k===to)break;k=(k+1)%L;}return a;};
-  const jrCW=walk(cA,cB),tramCW=walk(cB,cA);
-  const down=rnd()<0.5;
-  const tram=down?tramCW:tramCW.slice().reverse();
-  m.tram=tram;m.jr=down?jrCW.slice().reverse():jrCW; // jr: J1 -> J2
-  // 駅
-  const T=tram.length;const idx=[0];let k=0;for(;;){k+=pick([1,2,2]);if(k>=T-1)break;idx.push(k);}idx.push(T-1);
-  if(idx.length<(small?4:5))return null;
-  if(idx[idx.length-1]-idx[idx.length-2]<1)return null;
+/* ---------- 鉄道（地図の下のはし） ---------- */
+function addRail(m){
+  const n=pick([3,4]);const base=n===4?[125,375,625,875]:[170,500,830];
   const names=shuffle(STAP);
-  const mk=(v)=>({id:'t'+m.stations.length,i:v[0],j:v[1],x:GX[v[0]],y:GY[v[1]],name:names.pop()+'駅',tramIdx:null,jrIdx:null});
-  for(const t of idx){const st=mk(tram[t]);st.tramIdx=t;m.stations.push(st);}
-  m.J1=m.stations[0];m.J2=m.stations[m.stations.length-1];
-  m.J1.jrIdx=0;m.J2.jrIdx=m.jr.length-1;
-  if(!small&&m.jr.length>=3&&rnd()<0.6){const mid=Math.floor((m.jr.length-1)/2);const st=mk(m.jr[mid]);st.jrIdx=mid;m.stations.push(st);}
-  m.tramSt=m.stations.filter(s=>s.tramIdx!==null).sort((a,b)=>a.tramIdx-b.tramIdx);
-  m.jrSt=m.stations.filter(s=>s.jrIdx!==null).sort((a,b)=>a.jrIdx-b.jrIdx);
-  // 時間
-  m.tramT=[];for(let q=1;q<m.tramSt.length;q++){const e=m.tramSt[q].tramIdx-m.tramSt[q-1].tramIdx;m.tramT.push(Math.max(2,e*2+ri(-1,1)));}
-  m.jrT=[];for(let q=1;q<m.jrSt.length;q++){const e=m.jrSt[q].jrIdx-m.jrSt[q-1].jrIdx;m.jrT.push(e+ri(1,2));}
-  m.wait=ri(2,4);
-  for(const st of m.stations)m.forbid.add(st.i+','+st.j);
-  // 時間の〇の位置
-  const usedEdges=new Set();
-  const outer=v=>v[0]===0||v[0]===4;
-  const circ=(path,a,b)=>{const e=a+Math.floor((b-a-1)/2);const p=IP(...path[e]),q=IP(...path[e+1]);usedEdges.add([path[e],path[e+1]].map(String).sort().join('|'));
-    let t=.5;if(e===a&&outer(path[a])&&p.y===q.y)t=.64;else if(e===b-1&&outer(path[b])&&p.y===q.y)t=.36;
-    return {x:p.x+(q.x-p.x)*t,y:p.y+(q.y-p.y)*t};};
-  m.tramC=[];for(let q=1;q<m.tramSt.length;q++)m.tramC.push(circ(tram,m.tramSt[q-1].tramIdx,m.tramSt[q].tramIdx));
-  m.jrC=[];for(let q=1;q<m.jrSt.length;q++)m.jrC.push(circ(m.jr,m.jrSt[q-1].jrIdx,m.jrSt[q].jrIdx));
-  // 上り・下りの矢印
-  const free=[];for(let q=0;q<T-1;q++){const key=[tram[q],tram[q+1]].map(String).sort().join('|');if(!usedEdges.has(key))free.push(q);}
-  if(!free.length)return null;
-  const vert=free.filter(q=>tram[q][0]===tram[q+1][0]);
-  const q0=pick(vert.length?vert:free);m.ud={a:tram[q0],b:tram[q0+1]};
-  { // 矢印のとなりの区画には しせつを置かない
-    const a=tram[q0],b=tram[q0+1];const mx=(GX[a[0]]+GX[b[0]])/2,my=(GY[a[1]]+GY[b[1]])/2;
-    let nx=-(b[1]-a[1]),ny=(b[0]-a[0]);if((VW/2-mx)*nx+(VH/2-my)*ny<0){nx=-nx;ny=-ny;}
-    let bx,by;if(a[0]===b[0]){bx=nx>0?a[0]:a[0]-1;by=Math.min(a[1],b[1]);}else{bx=Math.min(a[0],b[0]);by=ny>0?a[1]:a[1]-1;}
-    if(bx>=0&&bx<NBX&&by>=0&&by<NBY)m.blockTB[bx+','+by]='TB';
-  }
-  fillFacilities(m,makeKindPool(LVc.fac,[]));
-  nameFacilities(m);
+  m.stations=base.map((x,ix)=>({id:'r'+ix,x:x+ri(-25,25),y:RY,name:names.pop()+'駅'}));
+  m.railT=[];m.railC=[];
+  for(let q=1;q<n;q++){const a=m.stations[q-1],b=m.stations[q];m.railT.push(ri(2,5));m.railC.push({x:(a.x+b.x)/2,y:RY});}
   return m;
 }
-function tramPath(m,a,b){ // a,b: tram stations
-  const lo=Math.min(a.tramIdx,b.tramIdx),hi=Math.max(a.tramIdx,b.tramIdx);
-  let v=m.tram.slice(lo,hi+1);if(a.tramIdx>b.tramIdx)v=v.reverse();return v.map(p=>IP(...p));
-}
-function tramTimes(m,a,b){const ia=m.tramSt.indexOf(a),ib=m.tramSt.indexOf(b);const lo=Math.min(ia,ib),hi=Math.max(ia,ib);const t=m.tramT.slice(lo,hi);return ia<ib?t:t.reverse();}
-function jrPathPts(m,fromJ){const v=fromJ===m.J1?m.jr:m.jr.slice().reverse();return v.map(p=>IP(...p));}
-function jrTimes(m,fromJ){return fromJ===m.J1?m.jrT.slice():m.jrT.slice().reverse();}
-
-function genMap(type){for(let t=0;t<300;t++){const m=type==='bus'?genBus():type==='route'?genRoute():genTrain();if(m)return m;}throw new Error('map');}
+function genMap(type){for(let t=0;t<300;t++){const m=type==='bus'?genBus():genRoute();if(m)return addRail(m);}throw new Error('map');}
 
 /* =========================================================
    地図を描く（SVG＋ふりがなつきラベル）
@@ -581,27 +542,16 @@ function offsetPoly(verts,o){
 }
 function mapHTML(m){
   let s=`<div class="map" data-type="${m.type}"><svg class="msvg" viewBox="0 0 ${VW} ${VH}" aria-hidden="true"><rect x="0" y="0" width="${VW}" height="${VH}" fill="#fff"/>`;
-  for(const x of GX)s+=`<rect x="${x-RW/2}" y="0" width="${RW}" height="${VH}" fill="#D3D8D9"/>`;
+  for(const x of GX)s+=`<rect x="${x-RW/2}" y="0" width="${RW}" height="${GB}" fill="#D3D8D9"/>`;
+  // 鉄道
+  s+=`<line x1="0" y1="${RY}" x2="${VW}" y2="${RY}" stroke="#111" stroke-width="13"/><line x1="0" y1="${RY}" x2="${VW}" y2="${RY}" stroke="#fff" stroke-width="7" stroke-dasharray="20 20"/>`;
+  if(LVc.time)m.railC.forEach((c,ix)=>{s+=`<circle cx="${c.x}" cy="${c.y}" r="20" fill="#fff" stroke="#111" stroke-width="3"/><text x="${c.x}" y="${c.y+1}" text-anchor="middle" dominant-baseline="central" font-size="24" font-weight="700" fill="#111">${m.railT[ix]}</text>`;});
   for(const y of GY)s+=`<rect x="0" y="${y-RW/2}" width="${VW}" height="${RW}" fill="#D3D8D9"/>`;
   if(m.type==='bus'){
     const pts=m.loop.map(v=>IP(...v));
     s+=`<polygon points="${pts.map(p=>p.x+','+p.y).join(' ')}" fill="none" stroke="#111" stroke-width="7" stroke-dasharray="0.1 13" stroke-linecap="round"/>`;
     const L=m.loop.length;const stopEdges=new Set(m.stops.map(t=>t.edge));
     for(let k=0;k<L;k++){if(stopEdges.has(k))continue;const a=IP(...m.loop[k]),b=IP(...m.loop[(k+1)%L]);const d={x:Math.sign(b.x-a.x),y:Math.sign(b.y-a.y)};s+=arrowTri({x:(a.x+b.x)/2,y:(a.y+b.y)/2},d,14);}
-  }
-  if(m.type==='train'){
-    const tp=m.tram.map(v=>IP(...v)),jp=m.jr.map(v=>IP(...v));
-    const pl=p=>p.map(q=>q.x+','+q.y).join(' ');
-    s+=`<polyline points="${pl(tp)}" fill="none" stroke="#333" stroke-width="12" stroke-linejoin="round"/><polyline points="${pl(tp)}" fill="none" stroke="#fff" stroke-width="5" stroke-linejoin="round"/>`;
-    s+=`<polyline points="${pl(jp)}" fill="none" stroke="#111" stroke-width="12"/><polyline points="${pl(jp)}" fill="none" stroke="#fff" stroke-width="7" stroke-dasharray="18 18"/>`;
-    for(const [arr,ts] of [[m.tramC,m.tramT],[m.jrC,m.jrT]])arr.forEach((c,ix)=>{s+=`<circle cx="${c.x}" cy="${c.y}" r="19" fill="#fff" stroke="#111" stroke-width="3"/><text x="${c.x}" y="${c.y+1}" text-anchor="middle" dominant-baseline="central" font-size="24" font-weight="700" fill="#111">${ts[ix]}</text>`;});
-    // 上り・下り（地図の内側に2本の矢印）
-    const a=IP(...m.ud.a),b=IP(...m.ud.b);const d={x:Math.sign(b.x-a.x),y:Math.sign(b.y-a.y)};const mid={x:(a.x+b.x)/2,y:(a.y+b.y)/2};
-    let n={x:-d.y,y:d.x};if((VW/2-mid.x)*n.x+(VH/2-mid.y)*n.y<0)n={x:-n.x,y:-n.y};
-    const arrow=(c,dd)=>{const p1={x:c.x-dd.x*30,y:c.y-dd.y*30},p2={x:c.x+dd.x*24,y:c.y+dd.y*24};return `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="#111" stroke-width="4"/>`+arrowTri({x:p2.x,y:p2.y},dd,11);};
-    const cDown={x:mid.x+n.x*30,y:mid.y+n.y*30},cUp={x:mid.x+n.x*64,y:mid.y+n.y*64};const u={x:-d.x,y:-d.y};
-    s+=arrow(cDown,d)+arrow(cUp,u);
-    m._ud={down:{x:cDown.x+d.x*62,y:cDown.y+d.y*62},up:{x:cUp.x+u.x*62,y:cUp.y+u.y*62}};
   }
   if(m.type==='route'){
     const offs=[-13,0,13];
@@ -624,7 +574,7 @@ function mapHTML(m){
   const cl=(x,len,extra=0)=>{const hw=((len*2.05+3.4+extra)/2).toFixed(2);return `max(${hw}cqw, min(calc(100% - ${hw}cqw), ${pct(x,VW)}))`;};
   for(const st of m.stops)s+=`<div class="stop" style="left:${cl(st.x,st.name.length,2.4)};top:${pct(st.y,VH)}">${busIcon()}<span>${R(st.name)}</span></div>`;
   for(const st of m.stations)s+=`<div class="sta" style="left:${cl(st.x,st.name.length)};top:${pct(st.y,VH)}">${R(st.name)}</div>`;
-  if(m.type==='train'&&m._ud){s+=`<div class="ud" style="left:${pct(m._ud.down.x,VW)};top:${pct(m._ud.down.y,VH)}">${R('下り')}</div><div class="ud" style="left:${pct(m._ud.up.x,VW)};top:${pct(m._ud.up.y,VH)}">${R('上り')}</div>`;}
+  if(false){s+=`<div class="ud" style="left:${pct(m._ud.down.x,VW)};top:${pct(m._ud.down.y,VH)}">${R('下り')}</div><div class="ud" style="left:${pct(m._ud.up.x,VW)};top:${pct(m._ud.up.y,VH)}">${R('上り')}</div>`;}
   s+=`</div>`;
   return s;
 }
@@ -636,16 +586,13 @@ function legendHTML(m){
     lg+=it(`<svg width="50" height="14" viewBox="0 0 50 14"><line x1="3" y1="7" x2="36" y2="7" stroke="#111" stroke-width="5" stroke-dasharray="0.1 9" stroke-linecap="round"/><path d="M36 1 L47 7 L36 13 Z" fill="#111"/></svg>`,'バスの通る道と向き');
     lg+=it(`<span style="display:inline-flex;align-items:center;border:2px solid #111;border-radius:10px;padding:0 6px;gap:3px;font-weight:700">${busIcon().replace('class="bs"','width="14" height="14"')}</span>`,'バス停');
   }
-  if(m.type==='train'){
-    lg+=it(`<svg width="46" height="14" viewBox="0 0 46 14"><line x1="2" y1="7" x2="44" y2="7" stroke="#333" stroke-width="9"/><line x1="2" y1="7" x2="44" y2="7" stroke="#fff" stroke-width="3.5"/></svg>`,'路面電車');
-    lg+=it(`<svg width="46" height="14" viewBox="0 0 46 14"><line x1="2" y1="7" x2="44" y2="7" stroke="#111" stroke-width="9"/><line x1="2" y1="7" x2="44" y2="7" stroke="#fff" stroke-width="5" stroke-dasharray="7 7"/></svg>`,'鉄道');
-    lg+=it(`<svg width="22" height="22" viewBox="0 0 22 22"><circle cx="11" cy="11" r="9.5" fill="#fff" stroke="#111" stroke-width="2"/><text x="11" y="12" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="700">3</text></svg>`,'となりの駅までの時間（ふん）');
-  }
+  lg+=it(`<svg width="46" height="14" viewBox="0 0 46 14"><line x1="2" y1="7" x2="44" y2="7" stroke="#111" stroke-width="9"/><line x1="2" y1="7" x2="44" y2="7" stroke="#fff" stroke-width="5" stroke-dasharray="7 7"/></svg>`,'鉄道');
+  if(LVc.time)lg+=it(`<svg width="22" height="22" viewBox="0 0 22 22"><circle cx="11" cy="11" r="9.5" fill="#fff" stroke="#111" stroke-width="2"/><text x="11" y="12" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="700">3</text></svg>`,'となりの駅までの時間（ふん）');
   if(m.type==='route'){
     for(const st of m.routes.map(r=>r.style))lg+=`<span class="lgi"><b>${st.lab}</b>${lineSample(st,60,14).replace('class="lnsample"','width="60" height="14"')}</span>`;
     lg+=it(`<svg width="18" height="18" viewBox="-16 -16 32 32"><path d="M-14 1 L0 -13 L14 1 L10 1 L10 13 L-10 13 L-10 1 Z" fill="#fff" stroke="#111" stroke-width="3"/></svg>`,'家');
   }
-  const cmp=`<span class="cmp"><svg width="24" height="32" viewBox="0 0 24 32"><path d="M14 2 L14 31 M14 2 L3 20 L22 20" fill="none" stroke="#111" stroke-width="2.6" stroke-linejoin="miter" stroke-linecap="butt"/></svg>${R('北')}</span>`;
+  const cmp=`<span class="cmp"><span class="cmpk">${R('北')}</span><svg width="18" height="30" viewBox="0 0 18 30" aria-hidden="true"><path d="M10 1 L10 29" stroke="#111" stroke-width="2.4"/><path d="M10 1 L2 17 L10 13 Z" fill="#111"/></svg></span>`;
   return `<div class="maphead"><span class="mt">${R('【地図】')}</span><span class="lg">${lg}</span>${cmp}</div>`;
 }
 
@@ -656,7 +603,7 @@ const HLC='#E36A00',HLC2='#1F78A8',HINTC='#2E8B57';
 function refPoints(m){
   const a=m.fac.map(f=>({obj:f,name:f.name,x:f.x,y:f.y}));
   if(m.type==='bus')for(const s of m.stops)a.push({obj:s,name:s.name+'バス停',x:s.x,y:s.y});
-  if(m.type==='train')for(const s of m.stations)a.push({obj:s,name:s.name,x:s.x,y:s.y});
+  for(const s of m.stations)a.push({obj:s,name:s.name,x:s.x,y:s.y});
   if(m.home)a.push({obj:m.home,name:'家',x:m.home.x,y:m.home.y});
   return a;
 }
@@ -745,7 +692,7 @@ const qDir4=(m,c)=>qDir(m,c,4),qDir8=(m,c)=>qDir(m,c,8);
 function countables(m){
   const cnt=counts(m);const out=Object.keys(cnt).filter(k=>cnt[k]>=2).map(k=>({name:k,items:m.fac.filter(f=>f.kind===k),unit:'か所'}));
   if(m.type==='bus')out.push({name:'バス停',items:m.stops,unit:'か所'});
-  if(m.type==='train')out.push({name:'駅',items:m.stations,unit:'か所'});
+  if(m.stations.length)out.push({name:'駅',items:m.stations,unit:'か所'});
   return out;
 }
 function qCount(m,ctx){
@@ -856,78 +803,32 @@ function qRouteSide(m,ctx){
 }
 
 /* ---- 電車 ---- */
-function adjPairs(m){
-  const a=[];for(let q=1;q<m.tramSt.length;q++)a.push({x:m.tramSt[q-1],y:m.tramSt[q],t:m.tramT[q-1],c:m.tramC[q-1]});
-  for(let q=1;q<m.jrSt.length;q++)a.push({x:m.jrSt[q-1],y:m.jrSt[q],t:m.jrT[q-1],c:m.jrC[q-1]});
-  return a;
-}
+/* ---- 鉄道の時間 ---- */
+function railPts(m,ia,ib){return [{x:m.stations[ia].x,y:RY},{x:m.stations[ib].x,y:RY}];}
+function railTimes(m,ia,ib){const lo=Math.min(ia,ib),hi=Math.max(ia,ib);return m.railT.slice(lo,hi);}
 function qAdjTime(m,ctx){
-  const p=pick(adjPairs(m));const [a,b]=rnd()<.5?[p.x,p.y]:[p.y,p.x];
-  return numQ({label:'となりの駅までの時間',text:`${a.name}から となりの ${b.name}まで、電車で 何分かかるかな？`,answer:p.t,unit:'分',
-    explain:`${a.name}と ${b.name}の あいだにある 〇の数字を見ると、${p.t}分だよ。`,
-    draw(H){H.ring(a,{c:HLC2,r:34});H.ring(b,{c:HLC2,r:34});H.ring(p.c,{r:28,delay:.4});},names:[a.name]});
+  const q=ri(1,m.stations.length-1);const [ia,ib]=rnd()<.5?[q-1,q]:[q,q-1];const a=m.stations[ia],b=m.stations[ib];const t=m.railT[q-1];
+  return numQ({label:'となりの駅までの時間',text:`${a.name}から となりの ${b.name}まで、電車で 何分かかるかな？`,answer:t,unit:'分',
+    explain:`${a.name}と ${b.name}の あいだにある 〇の数字を見ると、${t}分だよ。`,
+    draw(H){H.ring(a,{c:HLC2,r:34});H.ring(b,{c:HLC2,r:34});H.ring(m.railC[q-1],{r:28,delay:.4});},names:['時間'+a.name]});
 }
-function qTramTime(m,ctx){
-  const S=m.tramSt;
-  for(let tries=0;tries<30;tries++){
-    const ia=ri(0,S.length-1);const span=ri(2,3)*(rnd()<.5?1:-1);const ib=ia+span;if(ib<0||ib>=S.length)continue;
-    const a=S[ia],b=S[ib];const dir=ib>ia?'下り':'上り';const ts=tramTimes(m,a,b);const sum=ts.reduce((x,y)=>x+y,0);
-    return numQ({label:'電車の時間',text:`${a.name}から ${dir}の路面電車に乗って、${b.name}まで 行くよ。何分かかるかな？`,answer:sum,unit:'分',
+function qRailTime(m,ctx){
+  const n=m.stations.length;if(n<3)return null;
+  for(let tries=0;tries<20;tries++){
+    const ia=ri(0,n-1),ib=ri(0,n-1);if(Math.abs(ia-ib)<2)continue;
+    const a=m.stations[ia],b=m.stations[ib];const ts=railTimes(m,ia,ib);const sum=ts.reduce((x,y)=>x+y,0);
+    return numQ({label:'電車の時間',text:`${a.name}から ${b.name}まで、電車で 何分かかるかな？`,answer:sum,unit:'分',
       explain:`通る駅の あいだの 〇の数字を 足すよ。${ts.join('＋')}＝${sum}分だよ。`,
-      draw(H){const pts=tramPath(m,a,b);H.ring(a,{c:HLC2,r:34});H.path(pts,{w:9,dur:polyLen(pts)/220});
-        const lo=Math.min(ia,ib),hi=Math.max(ia,ib);for(let q=lo;q<hi;q++)H.ring(m.tramC[q],{r:28,delay:.3+(ib>ia?q-lo:hi-1-q)*.5});},names:[a.name]});
+      draw(H){const pts=railPts(m,ia,ib);H.ring(a,{c:HLC2,r:34});H.path(pts,{w:9,dur:polyLen(pts)/220});
+        const lo=Math.min(ia,ib),hi=Math.max(ia,ib);for(let q=lo;q<hi;q++)H.ring(m.railC[q],{r:28,delay:.3+(ib>ia?q-lo:hi-1-q)*.5});},names:['時間'+a.name]});
   }
   return null;
 }
-function qStationAhead(m,ctx){
-  const S=m.tramSt;
-  for(let tries=0;tries<30;tries++){
-    const ia=ri(0,S.length-1);const k=ri(2,3)*(rnd()<.5?1:-1);const ib=ia+k;if(ib<0||ib>=S.length)continue;
-    const a=S[ia],b=S[ib];const dir=k>0?'下り':'上り';const K=Math.abs(k);
-    const opts=uniq([K,K+1,K-1,K+2].filter(x=>x>=1)).slice(0,4);
-    return choiceQ({label:'いくつ目の駅',text:`${a.name}から ${dir}の路面電車に乗ると、${b.name}は いくつ目の駅かな？`,
-      choices:opts.map(x=>({text:`${x}つ目`,correct:x===K})),
-      explain:`${dir}の 矢印の向きに進むよ。${a.name}の 次の駅から 1つ目、2つ目…と かぞえると、${b.name}は ${K}つ目だよ。`,
-      draw(H){const pts=tramPath(m,a,b);H.ring(a,{c:HLC2,r:34});H.path(pts,{w:9,dur:polyLen(pts)/200});
-        for(let q=1;q<=K;q++){const s=S[ia+(k>0?q:-q)];const sub=tramPath(m,a,s);H.badge({x:s.x+30,y:s.y-30},q,polyLen(sub)/200);}},names:[a.name]});
-  }
-  return null;
-}
-function compareData(m,a,dest){
-  // a: 路面電車の駅（はしの駅でない）、dest: J1 か J2
-  const other=dest===m.J1?m.J2:m.J1;
-  const dirDirect=dest===m.J2?'下り':'上り',dirTrans=dirDirect==='下り'?'上り':'下り';
-  const tD=tramTimes(m,a,dest),tT1=tramTimes(m,a,other),tT2=jrTimes(m,other);
-  const TD=tD.reduce((x,y)=>x+y,0),TT=tT1.reduce((x,y)=>x+y,0)+m.wait+tT2.reduce((x,y)=>x+y,0);
-  return {other,dirDirect,dirTrans,tD,tT1,tT2,TD,TT};
-}
-function qCompare(m,ctx){
-  for(const a of shuffle(m.tramSt.slice(1,-1))){
-    for(const dest of shuffle([m.J1,m.J2])){
-      const c=compareData(m,a,dest);if(c.TD===c.TT||Math.abs(c.TD-c.TT)>4)continue;
-      const directWins=c.TD<c.TT;
-      const win=directWins?{dir:c.dirDirect,t:c.TD}:{dir:c.dirTrans,t:c.TT};
-      const lose=directWins?{dir:c.dirTrans,t:c.TT}:{dir:c.dirDirect,t:c.TD};
-      const f=(d,t)=>`${d}に乗る・${t}分`;
-      const opts=[{text:f(win.dir,win.t),correct:true},{text:f(lose.dir,lose.t),correct:false},{text:f(c.dirTrans,c.TT-m.wait),correct:false},{text:f(win.dir,lose.t),correct:false}];
-      const seen=new Set();const ch=opts.filter(o=>{if(seen.has(o.text))return false;seen.add(o.text);return true;});
-      if(ch.length<Math.min(3,LVc.nch))continue;
-      const exD=`${c.dirDirect}：${c.tD.join('＋')}＝${c.TD}分`;
-      const exT=`${c.dirTrans}：${c.tT1.join('＋')}＋${m.wait}（待ち時間）＋${c.tT2.join('＋')}＝${c.TT}分`;
-      return choiceQ({label:'早く着くのはどっち',text:`${a.name}から ${dest.name}まで 電車で行くよ。上りと下りの どちらに乗ると 早く着くかな？ かかる時間も 合わせて えらんでね。`,
-        extra:`${c.other.name}で 路面電車と鉄道を 乗りかえるときは、待ち時間が ${m.wait}分 あるよ。`,
-        choices:ch,
-        explain:`${exD}。${exT}。待ち時間も 足すと、${win.dir}の方が ${Math.abs(c.TD-c.TT)}分 早いよ。`,
-        draw(H){const pD=tramPath(m,a,dest);const pT=[...tramPath(m,a,c.other),...jrPathPts(m,c.other).slice(1)];
-          H.ring(a,{c:HLC2,r:34});
-          const first=directWins?pT:pD,second=directWins?pD:pT;
-          H.path(first,{c:HLC2,w:9,dur:polyLen(first)/260});
-          H.path(second,{c:HLC,w:9,dur:polyLen(second)/260,delay:polyLen(first)/260+.3});
-          H.ring(c.other,{c:HLC2,r:38,delay:.5});H.ring(dest,{r:38,delay:(polyLen(first)+polyLen(second))/260+.3});},
-        names:[a.name,dest.name]});
-    }
-  }
-  return null;
+function factRailTime(m){
+  const n=m.stations.length;const ia=0,ib=n-1;const [x,y]=rnd()<.5?[ia,ib]:[ib,ia];
+  const a=m.stations[x],b=m.stations[y];const ts=railTimes(m,x,y);const sum=ts.reduce((p,q)=>p+q,0);const w=pick([sum+1,sum-1,sum+2].filter(v=>v>=1));
+  const mk=v=>`${a.name}から ${b.name}まで、電車で ${v}分かかる。`;
+  return {type:'time',t:mk(sum),f:mk(w),why:`${ts.join('＋')}＝${sum}分だよ。`,draw:H=>{const pts=railPts(m,x,y);H.path(pts,{w:9,dur:polyLen(pts)/220});}};
 }
 
 /* ---- 正しい文 ---- */
@@ -968,21 +869,8 @@ function factTurns(m){
   const r=pick(m.routes);const t=r.turns.length;const w=pick([t+1,t-1].filter(x=>x>=1));const mk=x=>`${r.lab}の道順では、交差点で ${x}回 曲がる。`;
   return {type:'turns',t:mk(t),f:mk(w),why:`${r.lab}の道順は、交差点で ${t}回 曲がるよ。`,draw:H=>{const pts=routePts(r);H.path(pts,{w:8,dur:polyLen(pts)/220});r.turns.forEach((tt,ix)=>{const p=pts[tt];H.badge({x:p.x+26,y:p.y-26},ix+1,polyLen(pts.slice(0,tt+1))/220);});}};
 }
-function factTime(m){
-  const S=m.tramSt;for(let tries=0;tries<20;tries++){const ia=ri(0,S.length-1),ib=ia+ri(1,3)*(rnd()<.5?1:-1);if(ib<0||ib>=S.length)continue;
-    const a=S[ia],b=S[ib],dir=ib>ia?'下り':'上り';const ts=tramTimes(m,a,b);const sum=ts.reduce((x,y)=>x+y,0);const w=pick([sum+1,sum-1,sum+2].filter(x=>x>=1));
-    const mk=x=>`${a.name}から ${b.name}まで、${dir}の路面電車で ${x}分かかる。`;
-    return {type:'time',t:mk(sum),f:mk(w),why:`${ts.join('＋')}＝${sum}分だよ。`,draw:H=>{const pts=tramPath(m,a,b);H.path(pts,{w:9,dur:polyLen(pts)/220});}};}
-  return null;
-}
-function factStAhead(m){
-  const S=m.tramSt;for(let tries=0;tries<20;tries++){const ia=ri(0,S.length-1),k=ri(2,3)*(rnd()<.5?1:-1),ib=ia+k;if(ib<0||ib>=S.length)continue;
-    const a=S[ia],b=S[ib],dir=k>0?'下り':'上り',K=Math.abs(k);const mk=x=>`${a.name}から ${dir}の路面電車に乗ると、${b.name}は ${x}つ目の駅である。`;
-    return {type:'stahead',t:mk(K),f:mk(K+1),why:`${a.name}の 次の駅から かぞえると、${b.name}は ${K}つ目だよ。`,draw:H=>{const pts=tramPath(m,a,b);H.path(pts,{w:9,dur:polyLen(pts)/200});}};}
-  return null;
-}
 function qStatement(m,ctx){
-  const gens={bus:[factDir,factCount,factAhead,factSideBus],route:[factDir,factCount,factSideRoute,factTurns],train:[factDir,factCount,factTime,factStAhead]}[m.type];
+  const gens={bus:[factDir,factCount,factAhead,factSideBus],route:[factDir,factCount,factSideRoute,factTurns]}[m.type].concat(LVc.time?[factRailTime]:[]);
   const facts=[];for(const g of shuffle(gens)){const f=g(m);if(f)facts.push(f);}
   if(facts.length<Math.min(3,LVc.nch))return null;
   const use=facts.slice(0,4);const neg=rnd()<0.3;const key=use[0];
@@ -994,10 +882,10 @@ function qStatement(m,ctx){
 
 /* ---- レベルごとの問題 ---- */
 const GENS={
-  bus:{1:[qNearestStop,qNearestKind],2:[qDir4,qDir8,qCount,qCountCombo],3:[qAhead,qAheadName],4:[qSideBus,qStatement]},
-  route:{1:[qNearestHome,qNearestKind],2:[qDir4,qDir8,qCount,qCountCombo],3:[qRouteDesc,qRouteTurns],4:[qRouteSide,qStatement]},
-  train:{1:[qNearestStation,qAdjTime,qNearestKind],2:[qDir4,qDir8,qCount,qCountCombo],3:[qTramTime,qStationAhead],4:[qCompare,qStatement]}
+  bus:{1:[qNearestStop,qNearestKind,qNearestStation],2:[qDir4,qDir8,qCount,qCountCombo],3:[qAhead,qAheadName],4:[qSideBus,qStatement]},
+  route:{1:[qNearestHome,qNearestKind,qNearestStation],2:[qDir4,qDir8,qCount,qCountCombo],3:[qRouteDesc,qRouteTurns],4:[qRouteSide,qStatement]}
 };
+const TIMEG={1:[qAdjTime],3:[qRailTime]};
 function genrePlan(genres,n){const g=[...genres].sort((a,b)=>a-b),G=g.length,t=[];for(let i=1;i<=n;i++)t.push(g[Math.max(0,Math.ceil(i*G/n)-1)]);return t;}
 function toChoice(q){
   const a=q.answer,c=[];for(const d of [1,-1,2,-2,3,-3,4])if(a+d>=1)c.push(a+d);
@@ -1015,19 +903,19 @@ function hintPts(m,q){
   for(const r of refs){if(t.includes(r.name)){out.push(r);t=t.split(r.name).join('　');}}
   return out;
 }
-function makeSession(type,genres,level,n){
-  setLevel(level);
+function makeSession(type,genres,cfg,n){
+  setCfg(cfg);
   for(let att=0;att<60;att++){
     const m=genMap(type);const ctx={usedNames:new Set(),usedGen:[]};const qs=[];let ok=true;
     for(const tier of genrePlan(genres,n)){
       let q=null;
-      const gens=GENS[type][tier];
+      const gens=GENS[type][tier].concat(LVc.time?(TIMEG[tier]||[]):[]);
       const fresh=shuffle(gens.filter(g=>!ctx.usedGen.includes(g))),old=shuffle(gens.filter(g=>ctx.usedGen.includes(g)));
       for(const g of [...fresh,...old]){q=g(m,ctx);if(q){ctx.usedGen.push(g);adapt(q);q.hintPts=hintPts(m,q);break;}}
       if(!q){ok=false;break;}
       q.tier=tier;(q.names||[]).forEach(x=>ctx.usedNames.add(x));qs.push(q);
     }
-    if(ok)return {map:m,qs,type,level,genres};
+    if(ok)return {map:m,qs,type,genres,lv:LVc};
   }
   throw new Error('session');
 }
@@ -1104,36 +992,51 @@ const Snd={ctx:null,on:true,
    画面
    ========================================================= */
 const $=id=>document.getElementById(id);
-const store={get(){try{return JSON.parse(localStorage.getItem('chizuDrill.v2')||'{}');}catch(e){return {};}},set(v){try{localStorage.setItem('chizuDrill.v2',JSON.stringify(v));}catch(e){}}};
-const S={type:'bus',genres:[1,2,3,4],level:2,count:4,sound:'on'};
+const store={get(){try{return JSON.parse(localStorage.getItem('chizuDrill.v3')||'{}');}catch(e){return {};}},set(v){try{localStorage.setItem('chizuDrill.v3',JSON.stringify(v));}catch(e){}}};
+const S={genres:[1,2,3,4],level:2,cfg:{...PRESETS[2],time:false},count:4,sound:'on'};
 Object.assign(S,store.get());
 if(!Array.isArray(S.genres))S.genres=[1,2,3,4];S.genres=S.genres.filter(g=>g>=1&&g<=4);if(!S.genres.length)S.genres=[1,2,3,4];
-if(!(S.level>=1&&S.level<=4))S.level=2;if(!(S.count>=3&&S.count<=6))S.count=4;if(S.count<S.genres.length)S.count=S.genres.length;
-const TYPE_BTNS=[['bus','バスの地図'],['route','道順の地図'],['train','電車の地図'],['any','おまかせ']];
+if(!(S.level>=0&&S.level<=4))S.level=2;
+S.cfg=Object.assign({...PRESETS[S.level||2],time:false},S.cfg||{});
+if(!(S.count>=3&&S.count<=6))S.count=4;if(S.count<S.genres.length)S.count=S.genres.length;
 const GENRES=[[1,'いちばん近いものをさがす'],[2,'方位・かぞえる'],[3,'道順・いくつ先・時間'],[4,'左右・くらべる・正しい文']];
-const LEVELS=[[1,'答えは 2つ・建物は 少なめ・ヒントあり'],[2,'答えは 3つ・ヒントあり'],[3,'答えは 4つ・ヒントは ボタンで'],[4,'本番くらい・数字で 答える問題も']];
-const NOTES={bus:'バスが 町を回る地図だよ。バス停や、バスの進む向きを 読み取るよ。',route:'家から 行き先までの 道順が かいてある地図だよ。',train:'路面電車と 鉄道の地図だよ。〇の数字は、となりの駅までの時間（ふん）だよ。',any:'バス・道順・電車の地図から、毎回 どれかが 出るよ。'};
+const CFG_NUM=[['nch','選択肢の数',2,4,'つ'],['fac','建物の数',5,12,'こ'],['same','同じ種類の建物',2,3,'こまで'],['lines','道順の線',1,3,'本'],['tmax','曲がる回数',1,3,'回まで']];
+const CFG_SEG=[['num','答え方',[['choice','えらぶ'],['mix','まぜる'],['number','数字を入れる']]],['hint','ヒント',[['auto','はじめから出す'],['button','ボタンで出す'],['none','出さない']]],['time','電車の時間の問題',[[false,'なし'],[true,'あり']]]];
+const NOTES={bus:'バスが 町を回る地図だよ。下のはしには 鉄道が 走っているよ。',route:'家から 行き先までの 道順が かいてある地図だよ。下のはしには 鉄道が 走っているよ。'};
 
 function applyRuby(root=document){root.querySelectorAll('[data-r]').forEach(e=>{e.innerHTML=R(e.getAttribute('data-r'));});}
 function show(id){for(const s of ['scrStart','scrQuiz','scrResult','scrPrint'])$(s).hidden=s!==id;window.scrollTo(0,0);}
 function save(){store.set(S);}
 
+function levelOf(c){for(const l of [1,2,3,4])if(CFG_KEYS.every(k=>PRESETS[l][k]===c[k]))return l;return 0;}
 function buildSettings(){
-  $('segType').innerHTML=TYPE_BTNS.map(([v,t])=>`<button class="segbtn" type="button" data-v="${v}" aria-pressed="${S.type===v}">${R(t)}</button>`).join('');
+  S.level=levelOf(S.cfg);
   $('segGenre').innerHTML=GENRES.map(([v,t])=>`<button class="segbtn" type="button" data-v="${v}" aria-pressed="${S.genres.includes(v)}"><span class="ck" aria-hidden="true"></span><span>${R(t)}</span></button>`).join('');
-  $('segLevel').innerHTML=LEVELS.map(([v,t])=>`<button class="segbtn" type="button" data-v="${v}" aria-pressed="${S.level===v}"><span class="lv">${v}</span><span>${R(t)}</span></button>`).join('');
+  $('segLevel').innerHTML=[1,2,3,4].map(v=>`<button class="segbtn" type="button" data-v="${v}" aria-pressed="${S.level===v}">${v}</button>`).join('');
+  $('lvNote').hidden=S.level!==0;
+  $('cfgPanel').innerHTML=CFG_NUM.map(([k,lab,mn,mx,u])=>`<div class="cfgrow"><div class="flabel">${R(lab)}</div><div class="num"><button class="nbtn" type="button" data-k="${k}" data-d="-1" aria-label="へらす">▽</button><input type="text" inputmode="numeric" pattern="[0-9]*" data-k="${k}" value="${S.cfg[k]}" aria-label="${lab}"><button class="nbtn" type="button" data-k="${k}" data-d="1" aria-label="ふやす">△</button><span class="unit">${R(u)}</span></div></div>`).join('')
+    +CFG_SEG.map(([k,lab,opts])=>`<div class="cfgrow"><div class="flabel">${R(lab)}</div><div class="seg">${opts.map(([v,t])=>`<button class="segbtn" type="button" data-k="${k}" data-v="${v}" aria-pressed="${S.cfg[k]===v}">${R(t)}</button>`).join('')}</div></div>`).join('');
   [...$('segSound').children].forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===S.sound));
   $('cntIn').value=S.count;
 }
+function setCfgVal(k,v){
+  const d=CFG_NUM.find(x=>x[0]===k);
+  if(d){v=parseInt(v,10);if(isNaN(v))v=S.cfg[k];v=Math.max(d[2],Math.min(d[3],v));}
+  else if(k==='time')v=(v===true||v==='true');
+  S.cfg[k]=v;save();buildSettings();renderSample();
+}
+$('cfgPanel').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const k=b.dataset.k;
+  if(b.classList.contains('nbtn'))setCfgVal(k,S.cfg[k]+(+b.dataset.d));else setCfgVal(k,b.dataset.v);});
+$('cfgPanel').addEventListener('change',e=>{const inp=e.target.closest('input');if(inp)setCfgVal(inp.dataset.k,inp.value.replace(/[^0-9]/g,''));});
+$('btnCfg').addEventListener('click',()=>{const p=$('cfgPanel');p.hidden=!p.hidden;$('btnCfg').setAttribute('aria-expanded',String(!p.hidden));});
 function renderSample(){
-  setLevel(S.level);
-  const t=S.type==='any'?pick(['bus','route','train']):S.type;
+  setCfg(S.cfg);
+  const t=pick(['bus','route']);
   const m=genMap(t);
   $('sampleHost').innerHTML=legendHTML(m)+mapHTML(m);
-  $('sampleNote').innerHTML=R(NOTES[S.type]);
+  $('sampleNote').innerHTML=R(NOTES[t]);
 }
-$('segType').addEventListener('click',e=>{const b=e.target.closest('.segbtn');if(!b)return;S.type=b.dataset.v;save();buildSettings();renderSample();});
-$('segLevel').addEventListener('click',e=>{const b=e.target.closest('.segbtn');if(!b)return;S.level=+b.dataset.v;save();buildSettings();renderSample();});
+$('segLevel').addEventListener('click',e=>{const b=e.target.closest('.segbtn');if(!b)return;const l=+b.dataset.v;S.cfg={...PRESETS[l],time:S.cfg.time};save();buildSettings();renderSample();});
 $('segGenre').addEventListener('click',e=>{const b=e.target.closest('.segbtn');if(!b)return;const v=+b.dataset.v;
   if(S.genres.includes(v)){if(S.genres.length>1)S.genres=S.genres.filter(g=>g!==v);}else S.genres=[...S.genres,v].sort((a,b)=>a-b);
   if(S.count<S.genres.length)S.count=S.genres.length;save();buildSettings();});
@@ -1148,8 +1051,8 @@ $('btnResample').addEventListener('click',renderSample);
 let SESS=null,QI=0,RESULTS=[],H=null,SEL=null,ANSWERED=false,quitArm=0;
 function startQuiz(){
   Snd.unlock();Snd.on=S.sound==='on';
-  const t=S.type==='any'?pick(['bus','route','train']):S.type;
-  SESS=makeSession(t,S.genres,S.level,S.count);QI=0;RESULTS=[];
+  const t=pick(['bus','route']);
+  SESS=makeSession(t,S.genres,S.cfg,S.count);QI=0;RESULTS=[];
   $('mapHost').innerHTML=legendHTML(SESS.map)+mapHTML(SESS.map);
   H=makeH($('mapHost').querySelector('svg.msvg'));
   show('scrQuiz');showQ();
@@ -1158,7 +1061,7 @@ $('btnStart').addEventListener('click',startQuiz);
 function dotsHTML(){return SESS.qs.map((q,i)=>`<span class="${i<QI?'done':i===QI?'now':''}"></span>`).join('');}
 function showQ(){
   const q=SESS.qs[QI];ANSWERED=false;SEL=null;H.clear();H.clearHint();
-  const hasHint=q.hintPts.length>0,auto=LVP[SESS.level].hint==='auto';
+  const hm=SESS.lv.hint,hasHint=q.hintPts.length>0&&hm!=='none',auto=hm==='auto';
   if(hasHint&&auto)H.hint(q.hintPts);
   $('btnHint').hidden=!(hasHint&&!auto);
   $('qHint').hidden=!(hasHint&&auto);
@@ -1243,10 +1146,10 @@ function sheetFits(){
   return (last.getBoundingClientRect().bottom-sh.getBoundingClientRect().top)/mm<=297-5-3;
 }
 function buildPrint(){
-  const t=S.type==='any'?pick(['bus','route','train']):S.type;
+  const t=pick(['bus','route']);
   let n=S.count,msg='';
   for(;;){
-    PSESS=makeSession(t,S.genres,S.level,n);
+    PSESS=makeSession(t,S.genres,S.cfg,n);
     let w=n<=4?150:132,fit=false;
     for(;w>=96;w-=8){$('sheet').innerHTML=sheetHTML(PSESS,w);if(sheetFits()){fit=true;break;}}
     if(fit||n<=Math.max(3,S.genres.length))break;
@@ -1292,7 +1195,7 @@ $('btnCopy').addEventListener('click',()=>{
 
 /* ---- はじめる ---- */
 applyRuby();buildSettings();Snd.on=S.sound==='on';renderSample();
-window.MapDrill={genMap,makeSession,R,MISSING,genrePlan,setLevel,LVP,sidesAlong,busLeg,routeSegs,setRnd:f=>{rnd=f;}};
+window.MapDrill={genMap,makeSession,R,MISSING,genrePlan,setCfg,PRESETS,cfgLV,sidesAlong,busLeg,routeSegs,setRnd:f=>{rnd=f;}};
 </script>
 </body>
 </html>
