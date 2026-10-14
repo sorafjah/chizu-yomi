@@ -56,9 +56,10 @@ button{font-family:inherit;color:inherit}
 .segbtn[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-weak);color:var(--accent)}
 .levels{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
 .levels .segbtn{display:flex;align-items:center;gap:10px;text-align:left;min-height:60px}
-.levels .segbtn[data-v="0"]{grid-column:1/-1}
-.levels .segbtn[data-v="0"] .lv{font-size:14px}
-.field.off .num{opacity:.45}
+.genres .ck{flex:none;width:30px;height:30px;border-radius:7px;border:3px solid var(--line,#9AAFB5);background:#fff;position:relative}
+.genres .segbtn[aria-pressed="true"] .ck{background:var(--accent);border-color:var(--accent)}
+.genres .segbtn[aria-pressed="true"] .ck::after{content:"";position:absolute;left:8px;top:2px;width:8px;height:15px;border:solid #fff;border-width:0 4px 4px 0;transform:rotate(45deg)}
+.hintnote{margin:10px 0 0;font-size:16px;font-weight:700;color:#2E7D52}
 .levels .lv{flex:none;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:var(--bg);font-size:20px}
 .levels .segbtn[aria-pressed="true"] .lv{background:var(--accent);color:#fff}
 .hint{font-size:15px;color:var(--muted);margin:8px 0 0}
@@ -177,7 +178,7 @@ textarea.copybuf{position:fixed;left:-9999px;top:0;-webkit-user-select:text;user
 <section id="scrStart" class="screen">
   <header class="apphead">
     <div class="brand">
-      <svg viewBox="0 0 48 48" aria-hidden="true"><rect x="2" y="2" width="44" height="44" rx="10" fill="#17607A"/><path d="M24 8 L31 26 L24 22 L17 26 Z" fill="#fff"/><path d="M24 40 L17 22 L24 26 L31 22 Z" fill="#9FC8D5"/><text x="24" y="7.5" text-anchor="middle" font-size="7" font-weight="700" fill="#fff" font-family="sans-serif">N</text></svg>
+      <svg viewBox="0 0 48 48" aria-hidden="true"><rect x="2" y="2" width="44" height="44" rx="10" fill="#17607A"/><path d="M24 8 L31 26 L24 22 L17 26 Z" fill="#fff"/><path d="M24 40 L17 22 L24 26 L31 22 Z" fill="#9FC8D5"/></svg>
       <h1 data-r="地図よみとりドリル"></h1>
     </div>
     <p class="sub" data-r="地図を見て、場所や方位、道順を読み取る練習だよ。"></p>
@@ -195,9 +196,14 @@ textarea.copybuf{position:fixed;left:-9999px;top:0;-webkit-user-select:text;user
         <div class="seg" id="segType"></div>
       </div>
       <div class="field">
+        <div class="flabel" data-r="ジャンル"></div>
+        <div class="levels genres" id="segGenre"></div>
+        <p class="hint" data-r="いくつでも えらべるよ。えらんだジャンルの問題が、上から じゅんに 出るよ。"></p>
+      </div>
+      <div class="field">
         <div class="flabel" data-r="レベル"></div>
         <div class="levels" id="segLevel"></div>
-        <p class="hint" data-r="問題は あとになるほど むずかしくなるよ。えらんだレベルが さいごの問題のむずかしさだよ。"></p>
+        <p class="hint" data-r="レベルで、答えの数や 建物の数、ヒントが かわるよ。"></p>
       </div>
       <div class="field row" id="cntRow">
         <div class="flabel" data-r="問題の数"></div>
@@ -208,7 +214,6 @@ textarea.copybuf{position:fixed;left:-9999px;top:0;-webkit-user-select:text;user
           <span class="unit" data-r="もん"></span>
         </div>
       </div>
-      <p class="hint" id="cntHint" hidden data-r="レベル1〜4が 1もんずつなので、問題の数は 4もんだよ。"></p>
       <div class="field row">
         <div class="flabel" data-r="効果音"></div>
         <div class="seg" id="segSound">
@@ -238,7 +243,8 @@ textarea.copybuf{position:fixed;left:-9999px;top:0;-webkit-user-select:text;user
       <div class="qtext" id="qText"></div>
       <div id="qExtra"></div>
       <div id="qAns"></div>
-      <div class="qact" id="qAct"><button id="btnAnswer" class="btn primary big" type="button" disabled>こたえる</button></div>
+      <p class="hintnote" id="qHint" hidden data-r="みどりの 点線の〇が、問題に 出てくる 場所だよ。"></p>
+      <div class="qact" id="qAct"><button id="btnAnswer" class="btn primary big" type="button" disabled>こたえる</button><button id="btnHint" class="btn" type="button" hidden data-r="ヒントを見る"></button></div>
       <div id="qFb" class="fb" hidden></div>
     </div>
   </div>
@@ -279,7 +285,7 @@ textarea.copybuf{position:fixed;left:-9999px;top:0;-webkit-user-select:text;user
 /* =========================================================
    ふりがな
    ========================================================= */
-const RUBY_SRC=`設定:せってい 路面電車:ろめんでんしゃ 電車:でんしゃ 鉄道:てつどう 郵便局:ゆうびんきょく 小学校:しょうがっこう 中学校:ちゅうがっこう 公園:こうえん 病院:びょういん 図書館:としょかん 銀行:ぎんこう 警察署:けいさつしょ 消防署:しょうぼうしょ 市役所:しやくしょ 美術館:びじゅつかん 体育館:たいいくかん 公民館:こうみんかん 幼稚園:ようちえん 交番:こうばん 薬局:やっきょく 停:てい 駅:えき 前:まえ 丁目:ちょうめ 地図:ちず 方位:ほうい 進行方向:しんこうほうこう 方向:ほうこう 北東:ほくとう 北西:ほくせい 南東:なんとう 南西:なんせい 北:きた 南:みなみ 東:ひがし 西:にし 右側:みぎがわ 左側:ひだりがわ 右:みぎ 左:ひだり 側:がわ 見:み 近:ちか 家:いえ 歩:ある 曲:ま 交差点:こうさてん 着:つ 道順:みちじゅん 道:みち 出:で 向:む 乗:の 上り:のぼ 下り:くだ 上:うえ 下:した 何分:なんぷん 何回:なんかい 何:なん 時間:じかん 待:ま 早:はや 答:こた 正:ただ 文:ぶん 読:よ 取:と 数字:すうじ 数:かず 中:なか 先生用:せんせいよう 先生:せんせい 先:さき 目:め 場所:ばしょ 所:しょ 問題:もんだい 名前:なまえ 回:かい 線:せん 次:つぎ 通:とお 進:すす 行:い 足:た 合:あ 印刷:いんさつ 種類:しゅるい 効果音:こうかおん 新:あたら 作:つく 練習:れんしゅう 番号:ばんごう 建物:たてもの 気:き 考:かんが 長:なが 画面:がめん 書:か 開:ひら 白黒:しろくろ 紙:かみ 動:うご 結果:けっか 重:かさ 矢印:やじるし 方:ほう 町:まち 文字:もじ 字:じ`;
+const RUBY_SRC=`設定:せってい 入:はい 点線:てんせん 本番:ほんばん 同:おな 少:すく 多:おお 路面電車:ろめんでんしゃ 電車:でんしゃ 鉄道:てつどう 郵便局:ゆうびんきょく 小学校:しょうがっこう 中学校:ちゅうがっこう 公園:こうえん 病院:びょういん 図書館:としょかん 銀行:ぎんこう 警察署:けいさつしょ 消防署:しょうぼうしょ 市役所:しやくしょ 美術館:びじゅつかん 体育館:たいいくかん 公民館:こうみんかん 幼稚園:ようちえん 交番:こうばん 薬局:やっきょく 停:てい 駅:えき 前:まえ 丁目:ちょうめ 地図:ちず 方位:ほうい 進行方向:しんこうほうこう 方向:ほうこう 北東:ほくとう 北西:ほくせい 南東:なんとう 南西:なんせい 北:きた 南:みなみ 東:ひがし 西:にし 右側:みぎがわ 左側:ひだりがわ 右:みぎ 左:ひだり 側:がわ 見:み 近:ちか 家:いえ 歩:ある 曲:ま 交差点:こうさてん 着:つ 道順:みちじゅん 道:みち 出:で 向:む 乗:の 上り:のぼ 下り:くだ 上:うえ 下:した 何分:なんぷん 何回:なんかい 何:なん 時間:じかん 待:ま 早:はや 答:こた 正:ただ 文:ぶん 読:よ 取:と 数字:すうじ 数:かず 中:なか 先生用:せんせいよう 先生:せんせい 先:さき 目:め 場所:ばしょ 所:しょ 問題:もんだい 名前:なまえ 回:かい 線:せん 次:つぎ 通:とお 進:すす 行:い 足:た 合:あ 印刷:いんさつ 種類:しゅるい 効果音:こうかおん 新:あたら 作:つく 練習:れんしゅう 番号:ばんごう 建物:たてもの 気:き 考:かんが 長:なが 画面:がめん 書:か 開:ひら 白黒:しろくろ 紙:かみ 動:うご 結果:けっか 重:かさ 矢印:やじるし 方:ほう 町:まち 文字:もじ 字:じ`;
 const RUBY=RUBY_SRC.trim().split(/\s+/).map(s=>{const [w,r]=s.split(':');const mm=w.match(/^([一-鿿々]+)(.*)$/);return {w,k:mm[1],rest:mm[2],r};}).sort((a,b)=>b.w.length-a.w.length);
 const MISSING=new Set();
 const isKanji=c=>/[一-鿿々]/.test(c);
@@ -332,6 +338,15 @@ const LINE_STYLES=[
   {lab:'ウ',dash:'22 7 3 7',w:4.5,cap:'butt',name:'いってんさせん'}
 ];
 
+/* ---- レベル（地図のこみ具合・答え方・ヒント） ---- */
+const LVP={
+  1:{nch:2,fac:6,multi:[2,2],lines:[1],tmax:1,ct:[1],bus:[[2,2],[3,1]],notch:false,train:'small',num:'choice',hint:'auto'},
+  2:{nch:3,fac:8,multi:[2,2],lines:[2],tmax:2,ct:[1,2],bus:[[2,2],[3,2],[2,3]],notch:false,train:'small',num:'choice',hint:'auto'},
+  3:{nch:4,fac:10,multi:[3,2,2],lines:[2],tmax:2,ct:[2],bus:[[3,2],[2,3],[3,3],[4,2]],notch:false,train:'normal',num:'mix',hint:'button'},
+  4:{nch:4,fac:12,multi:[3,3,2],lines:[2,3],tmax:3,ct:[2],bus:[[3,2],[3,3],[4,2],[2,3]],notch:true,train:'normal',num:'number',hint:'button'}
+};
+let LVc=LVP[2];
+function setLevel(l){LVc=LVP[l]||LVP[2];}
 function newMap(type){return {type,fac:[],slotFac:new Map(),occ:new Set(),blockTB:{},forbid:new Set(),home:null,stops:[],stations:[],routes:[],used:new Set()};}
 function slotValid(i,j,sx,sy){const bx=sx>0?i:i-1,by=sy>0?j:j-1;return i>=0&&i<5&&j>=0&&j<4&&bx>=0&&bx<NBX&&by>=0&&by<NBY;}
 function canPlace(m,i,j,sx,sy){
@@ -346,7 +361,7 @@ function occupy(m,i,j,sx,sy){m.occ.add(skey(i,j,sx,sy));const bx=sx>0?i:i-1,by=s
 function addFac(m,i,j,sx,sy,kind){occupy(m,i,j,sx,sy);const f={id:'f'+m.fac.length,kind,i,j,sx,sy,x:GX[i]+sx*QO,y:GY[j]+sy*QO,name:kind};m.fac.push(f);m.slotFac.set(skey(i,j,sx,sy),f);return f;}
 function freeSlots(m){const a=[];for(let i=0;i<5;i++)for(let j=0;j<4;j++)for(const [sx,sy] of QUADS)if(canPlace(m,i,j,sx,sy))a.push([i,j,sx,sy]);return a;}
 function makeKindPool(total,required){
-  const multis=shuffle(MULTI).slice(0,3),counts=shuffle([3,3,2]),pool=[];
+  const multis=shuffle(MULTI).slice(0,LVc.multi.length),counts=shuffle(LVc.multi),pool=[];
   multis.forEach((k,ix)=>{for(let c=0;c<counts[ix];c++)pool.push(k);});
   const singles=shuffle(SINGLE.filter(k=>!required.includes(k)));
   pool.push(...singles.slice(0,Math.max(0,total-pool.length-required.length)));
@@ -389,16 +404,16 @@ function sidesAlong(m,segs){
 /* ---------- バスの地図 ---------- */
 function genBus(){
   const m=newMap('bus');
-  const [w,h]=pick([[3,2],[3,3],[4,2],[2,3],[3,2]]);
+  const [w,h]=pick(LVc.bus);
   const bx0=ri(0,NBX-w),by0=ri(0,NBY-h);let blocks=[];
   for(let x=bx0;x<bx0+w;x++)for(let y=by0;y<by0+h;y++)blocks.push([x,y]);
-  if(w>=3&&rnd()<0.5){const cs=[[bx0,by0],[bx0+w-1,by0],[bx0,by0+h-1],[bx0+w-1,by0+h-1]];const c=pick(cs);blocks=blocks.filter(b=>!(b[0]===c[0]&&b[1]===c[1]));}
+  if(LVc.notch&&w>=3&&rnd()<0.5){const cs=[[bx0,by0],[bx0+w-1,by0],[bx0,by0+h-1],[bx0+w-1,by0+h-1]];const c=pick(cs);blocks=blocks.filter(b=>!(b[0]===c[0]&&b[1]===c[1]));}
   let cyc=boundaryCycle(blocks);
   const wantCW=rnd()<0.5;if((signedArea(cyc)>0)!==wantCW)cyc.reverse();
   m.loop=cyc;m.cw=wantCW;
   const L=cyc.length,off=ri(0,1);
   for(let k=0;k<L;k++){if(k%2!==off)continue;const a=cyc[k],b=cyc[(k+1)%L];m.stops.push({id:'s'+m.stops.length,edge:k,a,b,x:(GX[a[0]]+GX[b[0]])/2,y:(GY[a[1]]+GY[b[1]])/2});}
-  fillFacilities(m,makeKindPool(ri(13,15),[]));
+  fillFacilities(m,makeKindPool(LVc.fac,[]));
   nameFacilities(m);
   // バス停の名前
   const dp=shuffle(DISTP);const usedRef=new Set();const names=new Set();
@@ -437,13 +452,14 @@ function genRoute(){
   const hs=[];for(let i=0;i<5;i++)for(let j=0;j<4;j++)hs.push([i,j]);
   const pairs=[];for(const h of hs)for(const d of hs)if(Math.abs(d[0]-h[0])>=2&&Math.abs(d[1]-h[1])>=2)pairs.push([h,d]);
   const [H,D]=pick(pairs);
-  let paths=monotonePaths(H,D).filter(p=>p.turns.length>=1&&p.turns.length<=3);
+  let paths=monotonePaths(H,D).filter(p=>p.turns.length>=1&&p.turns.length<=LVc.tmax);
   // 曲がる交差点にしせつを置けるものだけ
   paths=paths.filter(p=>p.turns.every(t=>QUADS.some(q=>slotValid(p.verts[t][0],p.verts[t][1],...q))));
-  if(paths.length<3)return null;
-  const two=paths.filter(p=>p.turns.length===2);
-  const correct=two.length?pick(two):pick(paths);
-  const others=shuffle(paths.filter(p=>p!==correct)).slice(0,2);
+  const nl=pick(LVc.lines);
+  if(paths.length<nl)return null;
+  const cs=paths.filter(p=>LVc.ct.includes(p.turns.length));if(!cs.length)return null;
+  const correct=pick(cs);
+  const others=shuffle(paths.filter(p=>p!==correct)).slice(0,nl-1);
   const routes=shuffle([correct,...others]);
   m.routes=routes.map((r,ix)=>({...r,style:LINE_STYLES[ix],lab:LINE_STYLES[ix].lab}));
   m.correctRoute=m.routes[routes.indexOf(correct)];
@@ -455,7 +471,7 @@ function genRoute(){
   const destKind=pick(['図書館','公民館','体育館','美術館']);
   const dq=shuffle(QUADS).find(q=>canPlace(m,D[0],D[1],...q));if(!dq)return null;
   m.dest=addFac(m,D[0],D[1],...dq,destKind);
-  const pool=makeKindPool(ri(13,15),[destKind]);
+  const pool=makeKindPool(LVc.fac,[destKind]);
   // 目じるし（正しい道順の曲がる交差点）
   m.landmarks=[];
   for(const t of m.correctRoute.turns){
@@ -488,7 +504,7 @@ function routeDescription(m,r){
 /* ---------- 電車の地図 ---------- */
 function genTrain(){
   const m=newMap('train');
-  const w=pick([3,4]),h=pick([2,3]);const bx0=ri(0,NBX-w),by0=ri(0,NBY-h);
+  const small=LVc.train==='small';const w=small?3:pick([3,4]),h=small?2:pick([2,3]);const bx0=ri(0,NBX-w),by0=ri(0,NBY-h);
   const blocks=[];for(let x=bx0;x<bx0+w;x++)for(let y=by0;y<by0+h;y++)blocks.push([x,y]);
   let cyc=boundaryCycle(blocks);if(signedArea(cyc)<0)cyc.reverse();
   const L=cyc.length;
@@ -502,14 +518,14 @@ function genTrain(){
   m.tram=tram;m.jr=down?jrCW.slice().reverse():jrCW; // jr: J1 -> J2
   // 駅
   const T=tram.length;const idx=[0];let k=0;for(;;){k+=pick([1,2,2]);if(k>=T-1)break;idx.push(k);}idx.push(T-1);
-  if(idx.length<5)return null;
+  if(idx.length<(small?4:5))return null;
   if(idx[idx.length-1]-idx[idx.length-2]<1)return null;
   const names=shuffle(STAP);
   const mk=(v)=>({id:'t'+m.stations.length,i:v[0],j:v[1],x:GX[v[0]],y:GY[v[1]],name:names.pop()+'駅',tramIdx:null,jrIdx:null});
   for(const t of idx){const st=mk(tram[t]);st.tramIdx=t;m.stations.push(st);}
   m.J1=m.stations[0];m.J2=m.stations[m.stations.length-1];
   m.J1.jrIdx=0;m.J2.jrIdx=m.jr.length-1;
-  if(m.jr.length>=3&&rnd()<0.6){const mid=Math.floor((m.jr.length-1)/2);const st=mk(m.jr[mid]);st.jrIdx=mid;m.stations.push(st);}
+  if(!small&&m.jr.length>=3&&rnd()<0.6){const mid=Math.floor((m.jr.length-1)/2);const st=mk(m.jr[mid]);st.jrIdx=mid;m.stations.push(st);}
   m.tramSt=m.stations.filter(s=>s.tramIdx!==null).sort((a,b)=>a.tramIdx-b.tramIdx);
   m.jrSt=m.stations.filter(s=>s.jrIdx!==null).sort((a,b)=>a.jrIdx-b.jrIdx);
   // 時間
@@ -536,7 +552,7 @@ function genTrain(){
     let bx,by;if(a[0]===b[0]){bx=nx>0?a[0]:a[0]-1;by=Math.min(a[1],b[1]);}else{bx=Math.min(a[0],b[0]);by=ny>0?a[1]:a[1]-1;}
     if(bx>=0&&bx<NBX&&by>=0&&by<NBY)m.blockTB[bx+','+by]='TB';
   }
-  fillFacilities(m,makeKindPool(ri(13,14),[]));
+  fillFacilities(m,makeKindPool(LVc.fac,[]));
   nameFacilities(m);
   return m;
 }
@@ -597,7 +613,7 @@ function mapHTML(m){
   }
   for(const f of m.fac)s+=`<circle cx="${f.x}" cy="${f.y}" r="7.5" fill="#111"/>`;
   if(m.home){const p=m.home;s+=`<g transform="translate(${p.x} ${p.y})"><path d="M-15 1 L0 -14 L15 1 L11 1 L11 14 L-11 14 L-11 1 Z" fill="#fff" stroke="#111" stroke-width="3" stroke-linejoin="round"/><rect x="-4" y="4" width="8" height="10" fill="#111"/></g>`;}
-  s+=`<g class="hl"></g></svg>`;
+  s+=`<g class="hintg"></g><g class="hl"></g></svg>`;
   // ラベル
   for(const f of m.fac){
     const y=f.y+(f.sy>0?9:-9);
@@ -626,17 +642,17 @@ function legendHTML(m){
     lg+=it(`<svg width="22" height="22" viewBox="0 0 22 22"><circle cx="11" cy="11" r="9.5" fill="#fff" stroke="#111" stroke-width="2"/><text x="11" y="12" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="700">3</text></svg>`,'となりの駅までの時間（ふん）');
   }
   if(m.type==='route'){
-    for(const st of LINE_STYLES)lg+=`<span class="lgi"><b>${st.lab}</b>${lineSample(st,60,14).replace('class="lnsample"','width="60" height="14"')}</span>`;
+    for(const st of m.routes.map(r=>r.style))lg+=`<span class="lgi"><b>${st.lab}</b>${lineSample(st,60,14).replace('class="lnsample"','width="60" height="14"')}</span>`;
     lg+=it(`<svg width="18" height="18" viewBox="-16 -16 32 32"><path d="M-14 1 L0 -13 L14 1 L10 1 L10 13 L-10 13 L-10 1 Z" fill="#fff" stroke="#111" stroke-width="3"/></svg>`,'家');
   }
-  const cmp=`<span class="cmp"><svg width="22" height="30" viewBox="0 0 22 30"><path d="M11 2 L18 22 L11 17 L4 22 Z" fill="#111"/><line x1="11" y1="17" x2="11" y2="29" stroke="#111" stroke-width="2"/></svg>${R('北')}</span>`;
+  const cmp=`<span class="cmp"><svg width="24" height="32" viewBox="0 0 24 32"><path d="M14 2 L14 31 M14 2 L3 20 L22 20" fill="none" stroke="#111" stroke-width="2.6" stroke-linejoin="miter" stroke-linecap="butt"/></svg>${R('北')}</span>`;
   return `<div class="maphead"><span class="mt">${R('【地図】')}</span><span class="lg">${lg}</span>${cmp}</div>`;
 }
 
 /* =========================================================
    問題づくり
    ========================================================= */
-const HLC='#E36A00',HLC2='#1F78A8';
+const HLC='#E36A00',HLC2='#1F78A8',HINTC='#2E8B57';
 function refPoints(m){
   const a=m.fac.map(f=>({obj:f,name:f.name,x:f.x,y:f.y}));
   if(m.type==='bus')for(const s of m.stops)a.push({obj:s,name:s.name+'バス停',x:s.x,y:s.y});
@@ -678,7 +694,7 @@ function qNearestStation(m,ctx){
   return nearestQ(m,ctx,{refs,targets:()=>m.stations,label:'いちばん近い駅',textFn:r=>`${r.name}に いちばん近い駅は どれかな？`,choiceText:t=>t.name});
 }
 function qNearestKind(m,ctx){
-  const cnt=counts(m);const kinds=Object.keys(cnt).filter(k=>cnt[k]>=3);if(!kinds.length)return null;
+  const cnt=counts(m);const kinds=Object.keys(cnt).filter(k=>cnt[k]>=2);if(!kinds.length)return null;
   const K=pick(kinds);
   const refs=refPoints(m).filter(r=>r.obj.kind!==K&&!r.obj.isHome);
   return nearestQ(m,ctx,{refs,targets:()=>m.fac.filter(f=>f.kind===K),label:'いちばん近い'+K,textFn:r=>`${r.name}に いちばん近い ${K}は どれかな？`,choiceText:t=>t.name});
@@ -686,7 +702,7 @@ function qNearestKind(m,ctx){
 function roadDist(a,b){return Math.abs(GX[a[0]]-GX[b[0]])+Math.abs(GY[a[1]]-GY[b[1]]);}
 function qNearestHome(m,ctx){
   const cnt=counts(m);
-  for(const K of shuffle(Object.keys(cnt).filter(k=>cnt[k]>=3))){
+  for(const K of shuffle(Object.keys(cnt).filter(k=>cnt[k]>=2))){
     const ts=m.fac.filter(f=>f.kind===K).map(f=>({f,d:roadDist(m.H,[f.i,f.j])})).sort((a,b)=>a.d-b.d);
     if(ts[1].d-ts[0].d<200)continue;
     const ans=ts[0].f;const h=m.home;
@@ -713,7 +729,7 @@ function qDir(m,ctx,mode){
       const ans=cands.filter(c=>c.dir===di&&c.dev<=tol);if(!ans.length)continue;
       const others=shuffle(cands.filter(c=>c.dev<=20&&angDiff(DIRS[c.dir].a,DIRS[di].a)>=90));
       const by=new Map();for(const c of others)if(!by.has(c.dir))by.set(c.dir,c);
-      const ds=[...by.values()].slice(0,3);if(ds.length<2)continue;
+      const ds=[...by.values()].slice(0,3);if(ds.length<Math.min(2,LVc.nch-1))continue;
       const a=pick(ans);const D=DIRS[di];
       return choiceQ({label:'方位（'+D.w+'）',text:`${r.name}から見て、${D.w}の方向にあるものは どれかな？`,
         choices:[{text:a.f.name,correct:true},...ds.map(c=>({text:c.f.name,correct:false}))],
@@ -756,7 +772,7 @@ function qAhead(m,ctx){
   for(const a of shuffle(m.stops)){
     const k=ri(2,Math.min(4,n-2));const b=m.stops[(m.stops.indexOf(a)+k)%n];
     const opts=uniq([k,k+1,n-k,k-1].filter(x=>x>=1&&x<n)).slice(0,4);
-    if(opts.length<3)continue;
+    if(opts.length<Math.min(3,LVc.nch))continue;
     return choiceQ({label:'いくつ先のバス停',text:`${a.name}バス停からバスに乗ると、${b.name}バス停は いくつ先のバス停かな？`,
       choices:opts.map(x=>({text:`${x}つ先`,correct:x===k})),
       explain:`バスは 矢印の向きに進むよ。${a.name}の 次のバス停から 1つ、2つ…と かぞえると、${b.name}は ${k}つ先だよ。`,
@@ -775,7 +791,7 @@ function qAheadName(m,ctx){
   const n=m.stops.length;
   for(const a of shuffle(m.stops)){
     const k=ri(2,Math.min(4,n-2));const ia=m.stops.indexOf(a);const at=x=>m.stops[((ia+x)%n+n)%n];
-    const b=at(k);const ds=uniq([at(k-1),at(k+1),at(-k)].filter(s=>s!==b&&s!==a));if(ds.length<2)continue;
+    const b=at(k);const ds=uniq([at(k-1),at(k+1),at(-k)].filter(s=>s!==b&&s!==a));if(ds.length<Math.min(2,LVc.nch-1))continue;
     return choiceQ({label:'いくつ先のバス停',text:`${a.name}バス停からバスに乗ると、${k}つ先のバス停は どこかな？`,
       choices:[{text:b.name+'バス停',correct:true},...ds.slice(0,3).map(s=>({text:s.name+'バス停',correct:false}))],
       explain:`バスは 矢印の向きに進むよ。${a.name}の 次のバス停から 1つ、2つ…と かぞえると、${k}つ先は ${b.name}だよ。`,
@@ -788,7 +804,7 @@ function sideChoice(cands,allSet,m,S){
   if(!ans.length||!opp.length)return null;
   const a=pick(ans);const ds=shuffle(opp).slice(0,2);
   const far=shuffle(m.fac.filter(f=>!allSet.has(f)&&!f.isDest));if(ds.length<3&&far.length)ds.push(far[0]);
-  if(ds.length<2)return null;
+  if(ds.length<Math.min(2,LVc.nch-1))return null;
   return {a,ds};
 }
 function qSideBus(m,ctx){
@@ -809,6 +825,7 @@ function qSideBus(m,ctx){
 
 /* ---- 道順 ---- */
 function qRouteDesc(m,ctx){
+  if(m.routes.length<2)return null;
   const r=m.correctRoute;const desc=routeDescription(m,r);
   return choiceQ({label:'道順の文と地図',text:`家から ${m.dest.name}まで 歩いたよ。下の文に合う道順は どれかな？`,
     extra:desc,extraHtml:R(desc),
@@ -894,7 +911,7 @@ function qCompare(m,ctx){
       const f=(d,t)=>`${d}に乗る・${t}分`;
       const opts=[{text:f(win.dir,win.t),correct:true},{text:f(lose.dir,lose.t),correct:false},{text:f(c.dirTrans,c.TT-m.wait),correct:false},{text:f(win.dir,lose.t),correct:false}];
       const seen=new Set();const ch=opts.filter(o=>{if(seen.has(o.text))return false;seen.add(o.text);return true;});
-      if(ch.length<3)continue;
+      if(ch.length<Math.min(3,LVc.nch))continue;
       const exD=`${c.dirDirect}：${c.tD.join('＋')}＝${c.TD}分`;
       const exT=`${c.dirTrans}：${c.tT1.join('＋')}＋${m.wait}（待ち時間）＋${c.tT2.join('＋')}＝${c.TT}分`;
       return choiceQ({label:'早く着くのはどっち',text:`${a.name}から ${dest.name}まで 電車で行くよ。上りと下りの どちらに乗ると 早く着くかな？ かかる時間も 合わせて えらんでね。`,
@@ -967,7 +984,7 @@ function factStAhead(m){
 function qStatement(m,ctx){
   const gens={bus:[factDir,factCount,factAhead,factSideBus],route:[factDir,factCount,factSideRoute,factTurns],train:[factDir,factCount,factTime,factStAhead]}[m.type];
   const facts=[];for(const g of shuffle(gens)){const f=g(m);if(f)facts.push(f);}
-  if(facts.length<3)return null;
+  if(facts.length<Math.min(3,LVc.nch))return null;
   const use=facts.slice(0,4);const neg=rnd()<0.3;const key=use[0];
   const choices=use.map(f=>{const isKey=f===key;const truth=neg?!isKey:isKey;return {text:truth?f.t:f.f,correct:isKey,fact:f};});
   const qhtml=neg?R('地図から 読み取れることとして、正しく')+'<strong class="em">ない</strong>'+R('ものは どれかな？'):R('地図から 読み取れることとして、正しいものは どれかな？');
@@ -981,20 +998,36 @@ const GENS={
   route:{1:[qNearestHome,qNearestKind],2:[qDir4,qDir8,qCount,qCountCombo],3:[qRouteDesc,qRouteTurns],4:[qRouteSide,qStatement]},
   train:{1:[qNearestStation,qAdjTime,qNearestKind],2:[qDir4,qDir8,qCount,qCountCombo],3:[qTramTime,qStationAhead],4:[qCompare,qStatement]}
 };
-function tierPlan(level,n){if(level===0)return [1,2,3,4];const t=[];for(let i=1;i<=n;i++)t.push(Math.max(1,Math.ceil(i*level/n)));return t;}
-function makeSession(type,level,n){
-  if(level===0)n=4;
-  for(let att=0;att<40;att++){
+function genrePlan(genres,n){const g=[...genres].sort((a,b)=>a-b),G=g.length,t=[];for(let i=1;i<=n;i++)t.push(g[Math.max(0,Math.ceil(i*G/n)-1)]);return t;}
+function toChoice(q){
+  const a=q.answer,c=[];for(const d of [1,-1,2,-2,3,-3,4])if(a+d>=1)c.push(a+d);
+  const ds=shuffle(c.slice(0,3)).slice(0,LVc.nch-1);
+  q.kind='choice';q.choices=[{text:a+q.unit,correct:true},...ds.map(x=>({text:x+q.unit,correct:false}))];
+  return choiceQ(q);
+}
+function adapt(q){
+  if(q.kind==='number'&&(LVc.num==='choice'||(LVc.num==='mix'&&rnd()<.5)))toChoice(q);
+  if(q.kind==='choice'&&q.choices.length>LVc.nch){let w=0;q.choices=q.choices.filter(c=>c.correct||++w<LVc.nch);}
+  return q;
+}
+function hintPts(m,q){
+  const refs=refPoints(m).sort((a,b)=>b.name.length-a.name.length);let t=q.text;const out=[];
+  for(const r of refs){if(t.includes(r.name)){out.push(r);t=t.split(r.name).join('　');}}
+  return out;
+}
+function makeSession(type,genres,level,n){
+  setLevel(level);
+  for(let att=0;att<60;att++){
     const m=genMap(type);const ctx={usedNames:new Set(),usedGen:[]};const qs=[];let ok=true;
-    for(const tier of tierPlan(level,n)){
+    for(const tier of genrePlan(genres,n)){
       let q=null;
       const gens=GENS[type][tier];
       const fresh=shuffle(gens.filter(g=>!ctx.usedGen.includes(g))),old=shuffle(gens.filter(g=>ctx.usedGen.includes(g)));
-      for(const g of [...fresh,...old]){q=g(m,ctx);if(q){ctx.usedGen.push(g);break;}}
+      for(const g of [...fresh,...old]){q=g(m,ctx);if(q){ctx.usedGen.push(g);adapt(q);q.hintPts=hintPts(m,q);break;}}
       if(!q){ok=false;break;}
       q.tier=tier;(q.names||[]).forEach(x=>ctx.usedNames.add(x));qs.push(q);
     }
-    if(ok)return {map:m,qs,type,level};
+    if(ok)return {map:m,qs,type,level,genres};
   }
   throw new Error('session');
 }
@@ -1011,10 +1044,12 @@ const Anim={list:[],raf:0,last:0,
 const SVGNS='http://www.w3.org/2000/svg';
 function sv(tag,attrs,parent){const e=document.createElementNS(SVGNS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);if(parent)parent.appendChild(e);return e;}
 function makeH(svg){
-  const g=svg.querySelector('.hl');
+  const g=svg.querySelector('.hl'),hg=svg.querySelector('.hintg');
   const fade=(el,delay)=>{if(!delay)return;el.setAttribute('opacity',0);Anim.add({dur:delay+.25,update(t){el.setAttribute('opacity',Math.max(0,Math.min(1,(t-delay)/.25)));}});};
   return {
     clear(){Anim.clear();g.innerHTML='';},
+    hint(pts){hg.innerHTML='';for(const p of pts)sv('circle',{cx:p.x,cy:p.y,r:30,fill:'none',stroke:HINTC,'stroke-width':5,'stroke-dasharray':'9 7'},hg);},
+    clearHint(){hg.innerHTML='';},
     ring(p,o={}){const e=sv('circle',{cx:p.x,cy:p.y,r:o.r||26,fill:'none',stroke:o.c||HLC,'stroke-width':o.w||6},g);fade(e,o.delay);return e;},
     line(a,b,o={}){const e=sv('line',{x1:a.x,y1:a.y,x2:b.x,y2:b.y,stroke:o.c||HLC,'stroke-width':o.w||5,'stroke-linecap':'round','stroke-dasharray':o.dash||'none'},g);fade(e,o.delay);return e;},
     text(p,t,o={}){const e=sv('text',{x:p.x,y:p.y,'text-anchor':'middle','dominant-baseline':'central','font-size':o.s||24,'font-weight':700,fill:o.c||HLC,stroke:'#fff','stroke-width':7,'paint-order':'stroke','stroke-linejoin':'round'},g);e.textContent=t;fade(e,o.delay);return e;},
@@ -1069,12 +1104,15 @@ const Snd={ctx:null,on:true,
    画面
    ========================================================= */
 const $=id=>document.getElementById(id);
-const store={get(){try{return JSON.parse(localStorage.getItem('chizuDrill.v1')||'{}');}catch(e){return {};}},set(v){try{localStorage.setItem('chizuDrill.v1',JSON.stringify(v));}catch(e){}}};
-const S={type:'bus',level:2,count:4,sound:'on'};
-Object.assign(S,store.get());if(!(S.count>=3&&S.count<=6))S.count=4;if(!(S.level>=0&&S.level<=4))S.level=2;
+const store={get(){try{return JSON.parse(localStorage.getItem('chizuDrill.v2')||'{}');}catch(e){return {};}},set(v){try{localStorage.setItem('chizuDrill.v2',JSON.stringify(v));}catch(e){}}};
+const S={type:'bus',genres:[1,2,3,4],level:2,count:4,sound:'on'};
+Object.assign(S,store.get());
+if(!Array.isArray(S.genres))S.genres=[1,2,3,4];S.genres=S.genres.filter(g=>g>=1&&g<=4);if(!S.genres.length)S.genres=[1,2,3,4];
+if(!(S.level>=1&&S.level<=4))S.level=2;if(!(S.count>=3&&S.count<=6))S.count=4;if(S.count<S.genres.length)S.count=S.genres.length;
 const TYPE_BTNS=[['bus','バスの地図'],['route','道順の地図'],['train','電車の地図'],['any','おまかせ']];
-const LEVELS=[[1,'いちばん近いものをさがす'],[2,'方位・かぞえる'],[3,'道順・いくつ先・時間'],[4,'左右・くらべる・正しい文'],[0,'レベル1〜4が 1もんずつ']];
-const NOTES={bus:'バスが 町を回る地図だよ。バス停や、バスの進む向きを 読み取るよ。',route:'家から 行き先までの 3つの道順が かいてある地図だよ。',train:'路面電車と 鉄道の地図だよ。〇の数字は、となりの駅までの時間（ふん）だよ。',any:'バス・道順・電車の地図から、毎回 どれかが 出るよ。'};
+const GENRES=[[1,'いちばん近いものをさがす'],[2,'方位・かぞえる'],[3,'道順・いくつ先・時間'],[4,'左右・くらべる・正しい文']];
+const LEVELS=[[1,'答えは 2つ・建物は 少なめ・ヒントあり'],[2,'答えは 3つ・ヒントあり'],[3,'答えは 4つ・ヒントは ボタンで'],[4,'本番くらい・数字で 答える問題も']];
+const NOTES={bus:'バスが 町を回る地図だよ。バス停や、バスの進む向きを 読み取るよ。',route:'家から 行き先までの 道順が かいてある地図だよ。',train:'路面電車と 鉄道の地図だよ。〇の数字は、となりの駅までの時間（ふん）だよ。',any:'バス・道順・電車の地図から、毎回 どれかが 出るよ。'};
 
 function applyRuby(root=document){root.querySelectorAll('[data-r]').forEach(e=>{e.innerHTML=R(e.getAttribute('data-r'));});}
 function show(id){for(const s of ['scrStart','scrQuiz','scrResult','scrPrint'])$(s).hidden=s!==id;window.scrollTo(0,0);}
@@ -1082,24 +1120,25 @@ function save(){store.set(S);}
 
 function buildSettings(){
   $('segType').innerHTML=TYPE_BTNS.map(([v,t])=>`<button class="segbtn" type="button" data-v="${v}" aria-pressed="${S.type===v}">${R(t)}</button>`).join('');
-  $('segLevel').innerHTML=LEVELS.map(([v,t])=>`<button class="segbtn" type="button" data-v="${v}" aria-pressed="${S.level===v}"><span class="lv">${v===0?'1-4':v}</span><span>${R(t)}</span></button>`).join('');
+  $('segGenre').innerHTML=GENRES.map(([v,t])=>`<button class="segbtn" type="button" data-v="${v}" aria-pressed="${S.genres.includes(v)}"><span class="ck" aria-hidden="true"></span><span>${R(t)}</span></button>`).join('');
+  $('segLevel').innerHTML=LEVELS.map(([v,t])=>`<button class="segbtn" type="button" data-v="${v}" aria-pressed="${S.level===v}"><span class="lv">${v}</span><span>${R(t)}</span></button>`).join('');
   [...$('segSound').children].forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===S.sound));
-  const mix=S.level===0;
-  $('cntIn').value=mix?4:S.count;
-  ['cntDown','cntUp','cntIn'].forEach(i=>{$(i).disabled=mix;});
-  $('cntRow').classList.toggle('off',mix);
-  $('cntHint').hidden=!mix;
+  $('cntIn').value=S.count;
 }
 function renderSample(){
+  setLevel(S.level);
   const t=S.type==='any'?pick(['bus','route','train']):S.type;
   const m=genMap(t);
   $('sampleHost').innerHTML=legendHTML(m)+mapHTML(m);
   $('sampleNote').innerHTML=R(NOTES[S.type]);
 }
 $('segType').addEventListener('click',e=>{const b=e.target.closest('.segbtn');if(!b)return;S.type=b.dataset.v;save();buildSettings();renderSample();});
-$('segLevel').addEventListener('click',e=>{const b=e.target.closest('.segbtn');if(!b)return;S.level=+b.dataset.v;save();buildSettings();});
+$('segLevel').addEventListener('click',e=>{const b=e.target.closest('.segbtn');if(!b)return;S.level=+b.dataset.v;save();buildSettings();renderSample();});
+$('segGenre').addEventListener('click',e=>{const b=e.target.closest('.segbtn');if(!b)return;const v=+b.dataset.v;
+  if(S.genres.includes(v)){if(S.genres.length>1)S.genres=S.genres.filter(g=>g!==v);}else S.genres=[...S.genres,v].sort((a,b)=>a-b);
+  if(S.count<S.genres.length)S.count=S.genres.length;save();buildSettings();});
 $('segSound').addEventListener('click',e=>{const b=e.target.closest('.segbtn');if(!b)return;S.sound=b.dataset.v;Snd.on=S.sound==='on';save();buildSettings();});
-const setCount=v=>{S.count=Math.max(3,Math.min(6,v|0||4));$('cntIn').value=S.count;save();};
+const setCount=v=>{S.count=Math.max(Math.max(3,S.genres.length),Math.min(6,v|0||4));$('cntIn').value=S.count;save();};
 $('cntDown').addEventListener('click',()=>setCount(S.count-1));
 $('cntUp').addEventListener('click',()=>setCount(S.count+1));
 $('cntIn').addEventListener('change',()=>setCount(parseInt($('cntIn').value.replace(/[^0-9]/g,''),10)));
@@ -1110,7 +1149,7 @@ let SESS=null,QI=0,RESULTS=[],H=null,SEL=null,ANSWERED=false,quitArm=0;
 function startQuiz(){
   Snd.unlock();Snd.on=S.sound==='on';
   const t=S.type==='any'?pick(['bus','route','train']):S.type;
-  SESS=makeSession(t,S.level,S.count);QI=0;RESULTS=[];
+  SESS=makeSession(t,S.genres,S.level,S.count);QI=0;RESULTS=[];
   $('mapHost').innerHTML=legendHTML(SESS.map)+mapHTML(SESS.map);
   H=makeH($('mapHost').querySelector('svg.msvg'));
   show('scrQuiz');showQ();
@@ -1118,7 +1157,11 @@ function startQuiz(){
 $('btnStart').addEventListener('click',startQuiz);
 function dotsHTML(){return SESS.qs.map((q,i)=>`<span class="${i<QI?'done':i===QI?'now':''}"></span>`).join('');}
 function showQ(){
-  const q=SESS.qs[QI];ANSWERED=false;SEL=null;H.clear();
+  const q=SESS.qs[QI];ANSWERED=false;SEL=null;H.clear();H.clearHint();
+  const hasHint=q.hintPts.length>0,auto=LVP[SESS.level].hint==='auto';
+  if(hasHint&&auto)H.hint(q.hintPts);
+  $('btnHint').hidden=!(hasHint&&!auto);
+  $('qHint').hidden=!(hasHint&&auto);
   $('qNum').innerHTML=R(`問題 ${QI+1}`)+` <span style="font-size:16px;color:var(--muted)">/ ${SESS.qs.length}</span>`;
   $('qDots').innerHTML=dotsHTML();
   $('qHead').innerHTML=R(TYPES[SESS.type]);
@@ -1145,7 +1188,7 @@ $('btnAnswer').addEventListener('click',()=>{
   const q=SESS.qs[QI];if(ANSWERED)return;let ok,mine;
   if(q.kind==='choice'){if(SEL===null)return;ok=q.choices[SEL].correct;mine=q.choices[SEL].text;}
   else{const v=parseInt($('numIn').value,10);if(isNaN(v))return;ok=v===q.answer;mine=v+q.unit;$('numIn').disabled=true;$('qAns').querySelectorAll('.nbtn').forEach(b=>b.disabled=true);}
-  ANSWERED=true;RESULTS.push({ok,label:q.label,mine,ans:q.answerText});
+  ANSWERED=true;H.clearHint();$('qHint').hidden=true;RESULTS.push({ok,label:q.label,mine,ans:q.answerText});
   if(q.kind==='choice'){$('qAns').querySelectorAll('.choice').forEach((b,i)=>{b.disabled=true;const c=q.choices[i];if(c.correct){b.classList.add('is-ok');b.querySelector('.tag').textContent='こたえ';}else if(i===SEL){b.classList.add('is-mine');b.querySelector('.tag').textContent='えらんだもの';}});}
   ok?Snd.ok():Snd.ng();
   const fb=$('qFb');fb.className='fb '+(ok?'ok':'try');
@@ -1159,6 +1202,7 @@ $('btnAnswer').addEventListener('click',()=>{
   $('btnReplay').addEventListener('click',()=>{H.clear();q.draw(H);});
   $('btnNext').addEventListener('click',()=>{if(last)showResult();else{QI++;showQ();window.scrollTo({top:0,behavior:reduceMotion?'auto':'smooth'});}});
 });
+$('btnHint').addEventListener('click',()=>{const q=SESS.qs[QI];if(ANSWERED)return;Snd.tap();H.hint(q.hintPts);$('btnHint').hidden=true;$('qHint').hidden=false;});
 $('btnQuit').addEventListener('click',()=>{
   const b=$('btnQuit');
   if(Date.now()-quitArm<3000){H&&H.clear();show('scrStart');b.textContent='やめる';return;}
@@ -1200,12 +1244,12 @@ function sheetFits(){
 }
 function buildPrint(){
   const t=S.type==='any'?pick(['bus','route','train']):S.type;
-  let n=S.level===0?4:S.count,msg='';
+  let n=S.count,msg='';
   for(;;){
-    PSESS=makeSession(t,S.level,n);
+    PSESS=makeSession(t,S.genres,S.level,n);
     let w=n<=4?150:132,fit=false;
     for(;w>=96;w-=8){$('sheet').innerHTML=sheetHTML(PSESS,w);if(sheetFits()){fit=true;break;}}
-    if(fit||n<=(S.level===0?4:3))break;
+    if(fit||n<=Math.max(3,S.genres.length))break;
     n--;msg=`1まいに 入るように、${n}もんに したよ。`;
   }
   $('keyList').innerHTML=PSESS.qs.map(q=>`<li>${R(q.answerText)}</li>`).join('');
@@ -1248,7 +1292,7 @@ $('btnCopy').addEventListener('click',()=>{
 
 /* ---- はじめる ---- */
 applyRuby();buildSettings();Snd.on=S.sound==='on';renderSample();
-window.MapDrill={genMap,makeSession,R,MISSING,tierPlan,sidesAlong,busLeg,routeSegs,setRnd:f=>{rnd=f;}};
+window.MapDrill={genMap,makeSession,R,MISSING,genrePlan,setLevel,LVP,sidesAlong,busLeg,routeSegs,setRnd:f=>{rnd=f;}};
 </script>
 </body>
 </html>
