@@ -56,6 +56,9 @@ button{font-family:inherit;color:inherit}
 .segbtn[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-weak);color:var(--accent)}
 .levels{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
 .levels .segbtn{display:flex;align-items:center;gap:10px;text-align:left;min-height:60px}
+.levels .segbtn[data-v="0"]{grid-column:1/-1}
+.levels .segbtn[data-v="0"] .lv{font-size:14px}
+.field.off .num{opacity:.45}
 .levels .lv{flex:none;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:var(--bg);font-size:20px}
 .levels .segbtn[aria-pressed="true"] .lv{background:var(--accent);color:#fff}
 .hint{font-size:15px;color:var(--muted);margin:8px 0 0}
@@ -196,7 +199,7 @@ textarea.copybuf{position:fixed;left:-9999px;top:0;-webkit-user-select:text;user
         <div class="levels" id="segLevel"></div>
         <p class="hint" data-r="問題は あとになるほど むずかしくなるよ。えらんだレベルが さいごの問題のむずかしさだよ。"></p>
       </div>
-      <div class="field row">
+      <div class="field row" id="cntRow">
         <div class="flabel" data-r="問題の数"></div>
         <div class="num">
           <button class="nbtn" type="button" id="cntDown" aria-label="へらす">▽</button>
@@ -205,6 +208,7 @@ textarea.copybuf{position:fixed;left:-9999px;top:0;-webkit-user-select:text;user
           <span class="unit" data-r="もん"></span>
         </div>
       </div>
+      <p class="hint" id="cntHint" hidden data-r="レベル1〜4が 1もんずつなので、問題の数は 4もんだよ。"></p>
       <div class="field row">
         <div class="flabel" data-r="効果音"></div>
         <div class="seg" id="segSound">
@@ -977,8 +981,9 @@ const GENS={
   route:{1:[qNearestHome,qNearestKind],2:[qDir4,qDir8,qCount,qCountCombo],3:[qRouteDesc,qRouteTurns],4:[qRouteSide,qStatement]},
   train:{1:[qNearestStation,qAdjTime,qNearestKind],2:[qDir4,qDir8,qCount,qCountCombo],3:[qTramTime,qStationAhead],4:[qCompare,qStatement]}
 };
-function tierPlan(level,n){const t=[];for(let i=1;i<=n;i++)t.push(Math.max(1,Math.ceil(i*level/n)));return t;}
+function tierPlan(level,n){if(level===0)return [1,2,3,4];const t=[];for(let i=1;i<=n;i++)t.push(Math.max(1,Math.ceil(i*level/n)));return t;}
 function makeSession(type,level,n){
+  if(level===0)n=4;
   for(let att=0;att<40;att++){
     const m=genMap(type);const ctx={usedNames:new Set(),usedGen:[]};const qs=[];let ok=true;
     for(const tier of tierPlan(level,n)){
@@ -1066,9 +1071,9 @@ const Snd={ctx:null,on:true,
 const $=id=>document.getElementById(id);
 const store={get(){try{return JSON.parse(localStorage.getItem('chizuDrill.v1')||'{}');}catch(e){return {};}},set(v){try{localStorage.setItem('chizuDrill.v1',JSON.stringify(v));}catch(e){}}};
 const S={type:'bus',level:2,count:4,sound:'on'};
-Object.assign(S,store.get());if(!(S.count>=3&&S.count<=6))S.count=4;if(!(S.level>=1&&S.level<=4))S.level=2;
+Object.assign(S,store.get());if(!(S.count>=3&&S.count<=6))S.count=4;if(!(S.level>=0&&S.level<=4))S.level=2;
 const TYPE_BTNS=[['bus','バスの地図'],['route','道順の地図'],['train','電車の地図'],['any','おまかせ']];
-const LEVELS=[[1,'いちばん近いものをさがす'],[2,'方位・かぞえる'],[3,'道順・いくつ先・時間'],[4,'左右・くらべる・正しい文']];
+const LEVELS=[[1,'いちばん近いものをさがす'],[2,'方位・かぞえる'],[3,'道順・いくつ先・時間'],[4,'左右・くらべる・正しい文'],[0,'レベル1〜4が 1もんずつ']];
 const NOTES={bus:'バスが 町を回る地図だよ。バス停や、バスの進む向きを 読み取るよ。',route:'家から 行き先までの 3つの道順が かいてある地図だよ。',train:'路面電車と 鉄道の地図だよ。〇の数字は、となりの駅までの時間（ふん）だよ。',any:'バス・道順・電車の地図から、毎回 どれかが 出るよ。'};
 
 function applyRuby(root=document){root.querySelectorAll('[data-r]').forEach(e=>{e.innerHTML=R(e.getAttribute('data-r'));});}
@@ -1077,9 +1082,13 @@ function save(){store.set(S);}
 
 function buildSettings(){
   $('segType').innerHTML=TYPE_BTNS.map(([v,t])=>`<button class="segbtn" type="button" data-v="${v}" aria-pressed="${S.type===v}">${R(t)}</button>`).join('');
-  $('segLevel').innerHTML=LEVELS.map(([v,t])=>`<button class="segbtn" type="button" data-v="${v}" aria-pressed="${S.level===v}"><span class="lv">${v}</span><span>${R(t)}</span></button>`).join('');
+  $('segLevel').innerHTML=LEVELS.map(([v,t])=>`<button class="segbtn" type="button" data-v="${v}" aria-pressed="${S.level===v}"><span class="lv">${v===0?'1-4':v}</span><span>${R(t)}</span></button>`).join('');
   [...$('segSound').children].forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===S.sound));
-  $('cntIn').value=S.count;
+  const mix=S.level===0;
+  $('cntIn').value=mix?4:S.count;
+  ['cntDown','cntUp','cntIn'].forEach(i=>{$(i).disabled=mix;});
+  $('cntRow').classList.toggle('off',mix);
+  $('cntHint').hidden=!mix;
 }
 function renderSample(){
   const t=S.type==='any'?pick(['bus','route','train']):S.type;
@@ -1191,12 +1200,12 @@ function sheetFits(){
 }
 function buildPrint(){
   const t=S.type==='any'?pick(['bus','route','train']):S.type;
-  let n=S.count,msg='';
+  let n=S.level===0?4:S.count,msg='';
   for(;;){
     PSESS=makeSession(t,S.level,n);
     let w=n<=4?150:132,fit=false;
     for(;w>=96;w-=8){$('sheet').innerHTML=sheetHTML(PSESS,w);if(sheetFits()){fit=true;break;}}
-    if(fit||n<=3)break;
+    if(fit||n<=(S.level===0?4:3))break;
     n--;msg=`1まいに 入るように、${n}もんに したよ。`;
   }
   $('keyList').innerHTML=PSESS.qs.map(q=>`<li>${R(q.answerText)}</li>`).join('');
